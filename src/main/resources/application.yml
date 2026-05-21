@@ -1,6 +1,12 @@
 spring:
   application:
     name: order-notification-service
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/order_notifications}
+    username: ${DATABASE_USERNAME:order_notifications}
+    password: ${DATABASE_PASSWORD:order_notifications}
+  flyway:
+    enabled: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
@@ -28,3 +34,8 @@ app:
     publish-timeout: ${KAFKA_PUBLISH_TIMEOUT:5s}
     topics:
       orders-received: ${ORDERS_RECEIVED_TOPIC:orders.received.v1}
+      notifications-requested: ${NOTIFICATIONS_REQUESTED_TOPIC:notifications.requested.v1}
+    consumers:
+      order-audit:
+        group-id: ${ORDER_AUDIT_CONSUMER_GROUP_ID:order-audit}
+        concurrency: ${ORDER_AUDIT_CONCURRENCY:1}
