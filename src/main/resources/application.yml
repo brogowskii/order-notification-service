@@ -1,6 +1,14 @@
 spring:
   application:
     name: order-notification-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
 
 server:
   port: ${PORT:8080}
@@ -14,3 +22,9 @@ management:
     web:
       exposure:
         include: health,info
+
+app:
+  kafka:
+    publish-timeout: ${KAFKA_PUBLISH_TIMEOUT:5s}
+    topics:
+      orders-received: ${ORDERS_RECEIVED_TOPIC:orders.received.v1}
