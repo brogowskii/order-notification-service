@@ -90,11 +90,12 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 next_attempt_at,
                 published_at
             FROM notification_outbox
-            WHERE status = 'PENDING'
+            WHERE status = :status
               AND next_attempt_at <= :now
             ORDER BY created_at
             LIMIT :limit
             """)
+        .param("status", OutboxStatus.PENDING.name())
         .param("now", timestamp(now))
         .param("limit", limit)
         .query(this::mapRow)
@@ -107,28 +108,36 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
         .sql(
             """
             UPDATE notification_outbox
-            SET status = 'PUBLISHED',
+            SET status = :status,
                 published_at = :publishedAt
             WHERE id = :id
             """)
+        .param("status", OutboxStatus.PUBLISHED.name())
         .param("id", id)
         .param("publishedAt", timestamp(publishedAt))
         .update();
   }
 
   @Override
-  public void markFailed(UUID id, Instant nextAttemptAt) {
+  public void markFailed(UUID id, Instant nextAttemptAt, int maxAttempts) {
     jdbcClient
         .sql(
             """
             UPDATE notification_outbox
             SET attempts = attempts + 1,
+                status = CASE
+                    WHEN attempts + 1 >= :maxAttempts THEN :failedStatus
+                    ELSE :pendingStatus
+                END,
                 next_attempt_at = :nextAttemptAt
             WHERE id = :id
-              AND status = 'PENDING'
+              AND status = :pendingStatus
             """)
         .param("id", id)
         .param("nextAttemptAt", timestamp(nextAttemptAt))
+        .param("maxAttempts", maxAttempts)
+        .param("failedStatus", OutboxStatus.FAILED.name())
+        .param("pendingStatus", OutboxStatus.PENDING.name())
         .update();
   }
 

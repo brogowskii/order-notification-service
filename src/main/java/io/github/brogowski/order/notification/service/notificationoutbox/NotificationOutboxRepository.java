@@ -12,5 +12,5 @@ interface NotificationOutboxRepository {
 
   void markPublished(UUID id, Instant publishedAt);
 
-  void markFailed(UUID id, Instant nextAttemptAt);
+  void markFailed(UUID id, Instant nextAttemptAt, int maxAttempts);
 }

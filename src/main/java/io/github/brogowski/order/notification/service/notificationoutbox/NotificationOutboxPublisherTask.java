@@ -21,18 +21,24 @@ class NotificationOutboxPublisherTask {
   private final Clock clock;
   private final int batchSize;
   private final Duration retryDelay;
+  private final int maxAttempts;
 
   NotificationOutboxPublisherTask(
       NotificationOutboxRepository notificationOutboxRepository,
       NotificationRequestedPublisher notificationRequestedPublisher,
       Clock clock,
       @Value("${app.notification-outbox.batch-size}") int batchSize,
-      @Value("${app.notification-outbox.retry-delay}") Duration retryDelay) {
+      @Value("${app.notification-outbox.retry-delay}") Duration retryDelay,
+      @Value("${app.notification-outbox.max-attempts}") int maxAttempts) {
+    if (maxAttempts < 1) {
+      throw new IllegalArgumentException("Notification outbox max attempts must be positive");
+    }
     this.notificationOutboxRepository = notificationOutboxRepository;
     this.notificationRequestedPublisher = notificationRequestedPublisher;
     this.clock = clock;
     this.batchSize = batchSize;
     this.retryDelay = retryDelay;
+    this.maxAttempts = maxAttempts;
   }
 
   @Scheduled(fixedDelayString = "${app.notification-outbox.publish-interval}")
@@ -50,7 +56,8 @@ class NotificationOutboxPublisherTask {
       notificationRequestedPublisher.publish(entry.toMessage());
       notificationOutboxRepository.markPublished(entry.id(), Instant.now(clock));
     } catch (NotificationOutboxPublishingException exception) {
-      notificationOutboxRepository.markFailed(entry.id(), Instant.now(clock).plus(retryDelay));
+      notificationOutboxRepository.markFailed(
+          entry.id(), Instant.now(clock).plus(retryDelay), maxAttempts);
     }
   }
 }

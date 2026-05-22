@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 class NotificationOutboxPublisherTaskTest {
@@ -39,7 +40,7 @@ class NotificationOutboxPublisherTaskTest {
         new CapturingNotificationRequestedPublisher(false);
     NotificationOutboxPublisherTask task =
         new NotificationOutboxPublisherTask(
-            repository, publisher, fixedClock(), 10, Duration.ofSeconds(10));
+            repository, publisher, fixedClock(), 10, Duration.ofSeconds(10), 3);
 
     task.publishPending();
 
@@ -76,12 +77,49 @@ class NotificationOutboxPublisherTaskTest {
             new CapturingNotificationRequestedPublisher(true),
             fixedClock(),
             10,
-            Duration.ofSeconds(10));
+            Duration.ofSeconds(10),
+            3);
 
     task.publishPending();
 
     assertThat(repository.failedEntryId).isEqualTo(repository.entries.get(0).id());
     assertThat(repository.nextAttemptAt).isEqualTo(NOW.plusSeconds(10));
+    assertThat(repository.failedMaxAttempts).isEqualTo(3);
+  }
+
+  @Test
+  void marksEntryFailedAfterMaxAttempts() {
+    UUID outboxId = UUID.randomUUID();
+    InMemoryNotificationOutboxRepository repository =
+        new InMemoryNotificationOutboxRepository(
+            List.of(
+                new NotificationOutboxEntry(
+                    outboxId,
+                    UUID.randomUUID(),
+                    "PL123456789",
+                    "recipient@example.com",
+                    "PL",
+                    "DE",
+                    42,
+                    NOW,
+                    OutboxStatus.PENDING,
+                    2,
+                    NOW,
+                    NOW,
+                    null)));
+    NotificationOutboxPublisherTask task =
+        new NotificationOutboxPublisherTask(
+            repository,
+            new CapturingNotificationRequestedPublisher(true),
+            fixedClock(),
+            10,
+            Duration.ofSeconds(10),
+            3);
+
+    task.publishPending();
+
+    assertThat(repository.entries.get(0).status()).isEqualTo(OutboxStatus.FAILED);
+    assertThat(repository.entries.get(0).attempts()).isEqualTo(3);
   }
 
   private static Clock fixedClock() {
@@ -96,6 +134,7 @@ class NotificationOutboxPublisherTaskTest {
     private Instant publishedAt;
     private UUID failedEntryId;
     private Instant nextAttemptAt;
+    private int failedMaxAttempts;
 
     private InMemoryNotificationOutboxRepository(List<NotificationOutboxEntry> entries) {
       this.entries = new ArrayList<>(entries);
@@ -119,12 +158,61 @@ class NotificationOutboxPublisherTaskTest {
     public void markPublished(UUID id, Instant publishedAt) {
       this.publishedEntryId = id;
       this.publishedAt = publishedAt;
+      replace(
+          id,
+          entry ->
+              new NotificationOutboxEntry(
+                  entry.id(),
+                  entry.requestId(),
+                  entry.shipmentNumber(),
+                  entry.recipientEmail(),
+                  entry.recipientCountryCode(),
+                  entry.senderCountryCode(),
+                  entry.statusCode(),
+                  entry.requestedAt(),
+                  OutboxStatus.PUBLISHED,
+                  entry.attempts(),
+                  entry.createdAt(),
+                  entry.nextAttemptAt(),
+                  publishedAt));
     }
 
     @Override
-    public void markFailed(UUID id, Instant nextAttemptAt) {
+    public void markFailed(UUID id, Instant nextAttemptAt, int maxAttempts) {
       this.failedEntryId = id;
       this.nextAttemptAt = nextAttemptAt;
+      this.failedMaxAttempts = maxAttempts;
+      replace(
+          id,
+          entry -> {
+            int attempts = entry.attempts() + 1;
+            OutboxStatus status =
+                attempts >= maxAttempts ? OutboxStatus.FAILED : OutboxStatus.PENDING;
+            return new NotificationOutboxEntry(
+                entry.id(),
+                entry.requestId(),
+                entry.shipmentNumber(),
+                entry.recipientEmail(),
+                entry.recipientCountryCode(),
+                entry.senderCountryCode(),
+                entry.statusCode(),
+                entry.requestedAt(),
+                status,
+                attempts,
+                entry.createdAt(),
+                nextAttemptAt,
+                entry.publishedAt());
+          });
+    }
+
+    private void replace(UUID id, Function<NotificationOutboxEntry, NotificationOutboxEntry> mapper) {
+      for (int index = 0; index < entries.size(); index++) {
+        NotificationOutboxEntry entry = entries.get(index);
+        if (entry.id().equals(id)) {
+          entries.set(index, mapper.apply(entry));
+          return;
+        }
+      }
     }
   }
 
