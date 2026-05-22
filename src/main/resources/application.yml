@@ -44,9 +44,11 @@ app:
       order-audit:
         group-id: ${ORDER_AUDIT_CONSUMER_GROUP_ID:order-audit}
         concurrency: ${ORDER_AUDIT_CONCURRENCY:1}
+        max-poll-records: ${ORDER_AUDIT_MAX_POLL_RECORDS:100}
       notification:
         group-id: ${NOTIFICATION_CONSUMER_GROUP_ID:notification}
         concurrency: ${NOTIFICATION_CONCURRENCY:1}
+        max-poll-records: ${NOTIFICATION_MAX_POLL_RECORDS:50}
   notification-outbox:
     enabled: ${NOTIFICATION_OUTBOX_ENABLED:true}
     publish-interval: ${NOTIFICATION_OUTBOX_PUBLISH_INTERVAL:2s}

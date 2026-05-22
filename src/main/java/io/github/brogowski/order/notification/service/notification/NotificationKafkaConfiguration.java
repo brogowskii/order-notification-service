@@ -34,10 +34,12 @@ class NotificationKafkaConfiguration {
 
   @Bean
   ConsumerFactory<String, NotificationRequestedMessage> notificationRequestedConsumerFactory(
-      KafkaProperties kafkaProperties) {
+      KafkaProperties kafkaProperties,
+      @Value("${app.kafka.consumers.notification.max-poll-records}") int maxPollRecords) {
     Map<String, Object> properties = new HashMap<>();
     properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
     properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
     properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
     properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
     properties.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
