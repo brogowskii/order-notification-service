@@ -39,3 +39,11 @@ app:
       order-audit:
         group-id: ${ORDER_AUDIT_CONSUMER_GROUP_ID:order-audit}
         concurrency: ${ORDER_AUDIT_CONCURRENCY:1}
+      notification:
+        group-id: ${NOTIFICATION_CONSUMER_GROUP_ID:notification}
+        concurrency: ${NOTIFICATION_CONCURRENCY:1}
+  notification-outbox:
+    enabled: ${NOTIFICATION_OUTBOX_ENABLED:true}
+    publish-interval: ${NOTIFICATION_OUTBOX_PUBLISH_INTERVAL:2s}
+    batch-size: ${NOTIFICATION_OUTBOX_BATCH_SIZE:50}
+    retry-delay: ${NOTIFICATION_OUTBOX_RETRY_DELAY:10s}

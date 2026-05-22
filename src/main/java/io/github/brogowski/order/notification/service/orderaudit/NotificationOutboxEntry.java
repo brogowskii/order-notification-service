@@ -1,5 +1,6 @@
 package io.github.brogowski.order.notification.service.orderaudit;
 
+import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -33,5 +34,16 @@ record NotificationOutboxEntry(
         createdAt,
         createdAt,
         null);
+  }
+
+  NotificationRequestedMessage toMessage() {
+    return new NotificationRequestedMessage(
+        requestId,
+        shipmentNumber,
+        recipientEmail,
+        recipientCountryCode,
+        senderCountryCode,
+        statusCode,
+        requestedAt);
   }
 }

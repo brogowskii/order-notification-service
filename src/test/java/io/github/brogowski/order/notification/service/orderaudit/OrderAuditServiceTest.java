@@ -6,6 +6,7 @@ import io.github.brogowski.order.notification.service.messaging.OrderReceivedMes
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -108,5 +109,16 @@ class OrderAuditServiceTest {
     public void save(NotificationOutboxEntry entry) {
       this.savedEntry = entry;
     }
+
+    @Override
+    public List<NotificationOutboxEntry> findPending(Instant now, int limit) {
+      return List.of();
+    }
+
+    @Override
+    public void markPublished(UUID id, Instant publishedAt) {}
+
+    @Override
+    public void markFailed(UUID id, Instant nextAttemptAt) {}
   }
 }

@@ -1,7 +1,11 @@
 package io.github.brogowski.order.notification.service.orderaudit;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -66,11 +70,94 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
         .update();
   }
 
+  @Override
+  public List<NotificationOutboxEntry> findPending(Instant now, int limit) {
+    return jdbcClient
+        .sql(
+            """
+            SELECT
+                id,
+                request_id,
+                shipment_number,
+                recipient_email,
+                recipient_country_code,
+                sender_country_code,
+                status_code,
+                requested_at,
+                status,
+                attempts,
+                created_at,
+                next_attempt_at,
+                published_at
+            FROM notification_outbox
+            WHERE status = 'PENDING'
+              AND next_attempt_at <= :now
+            ORDER BY created_at
+            LIMIT :limit
+            """)
+        .param("now", timestamp(now))
+        .param("limit", limit)
+        .query(this::mapRow)
+        .list();
+  }
+
+  @Override
+  public void markPublished(UUID id, Instant publishedAt) {
+    jdbcClient
+        .sql(
+            """
+            UPDATE notification_outbox
+            SET status = 'PUBLISHED',
+                published_at = :publishedAt
+            WHERE id = :id
+            """)
+        .param("id", id)
+        .param("publishedAt", timestamp(publishedAt))
+        .update();
+  }
+
+  @Override
+  public void markFailed(UUID id, Instant nextAttemptAt) {
+    jdbcClient
+        .sql(
+            """
+            UPDATE notification_outbox
+            SET attempts = attempts + 1,
+                next_attempt_at = :nextAttemptAt
+            WHERE id = :id
+              AND status = 'PENDING'
+            """)
+        .param("id", id)
+        .param("nextAttemptAt", timestamp(nextAttemptAt))
+        .update();
+  }
+
+  private NotificationOutboxEntry mapRow(ResultSet resultSet, int rowNumber) throws SQLException {
+    return new NotificationOutboxEntry(
+        resultSet.getObject("id", UUID.class),
+        resultSet.getObject("request_id", UUID.class),
+        resultSet.getString("shipment_number"),
+        resultSet.getString("recipient_email"),
+        resultSet.getString("recipient_country_code"),
+        resultSet.getString("sender_country_code"),
+        resultSet.getInt("status_code"),
+        resultSet.getTimestamp("requested_at").toInstant(),
+        OutboxStatus.valueOf(resultSet.getString("status")),
+        resultSet.getInt("attempts"),
+        resultSet.getTimestamp("created_at").toInstant(),
+        resultSet.getTimestamp("next_attempt_at").toInstant(),
+        timestampToInstant(resultSet.getTimestamp("published_at")));
+  }
+
   private static Timestamp timestamp(Instant instant) {
     return Timestamp.from(instant);
   }
 
   private static Timestamp timestampOrNull(Instant instant) {
     return instant == null ? null : Timestamp.from(instant);
+  }
+
+  private static Instant timestampToInstant(Timestamp timestamp) {
+    return timestamp == null ? null : timestamp.toInstant();
   }
 }
