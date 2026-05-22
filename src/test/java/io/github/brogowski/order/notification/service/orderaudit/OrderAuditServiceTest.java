@@ -3,10 +3,11 @@ package io.github.brogowski.order.notification.service.orderaudit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.brogowski.order.notification.service.messaging.OrderReceivedMessage;
+import io.github.brogowski.order.notification.service.notificationoutbox.NotificationOutboxCommand;
+import io.github.brogowski.order.notification.service.notificationoutbox.NotificationOutboxFacade;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -19,10 +20,9 @@ class OrderAuditServiceTest {
   @Test
   void storesAuditAndCreatesNotificationOutboxEntry() {
     InMemoryOrderRequestAuditRepository auditRepository = new InMemoryOrderRequestAuditRepository();
-    CapturingNotificationOutboxRepository outboxRepository =
-        new CapturingNotificationOutboxRepository();
+    CapturingNotificationOutboxFacade outboxFacade = new CapturingNotificationOutboxFacade();
     OrderAuditService service =
-        new OrderAuditService(auditRepository, outboxRepository, fixedClock());
+        new OrderAuditService(auditRepository, outboxFacade, fixedClock());
 
     UUID requestId = UUID.randomUUID();
     service.audit(
@@ -45,14 +45,14 @@ class OrderAuditServiceTest {
     assertThat(audit.receivedAt()).isEqualTo(RECEIVED_AT);
     assertThat(audit.storedAt()).isEqualTo(STORED_AT);
 
-    NotificationOutboxEntry outboxEntry = outboxRepository.savedEntry;
-    assertThat(outboxEntry.id()).isNotNull();
-    assertThat(outboxEntry.requestId()).isEqualTo(requestId);
-    assertThat(outboxEntry.status()).isEqualTo(OutboxStatus.PENDING);
-    assertThat(outboxEntry.attempts()).isZero();
-    assertThat(outboxEntry.createdAt()).isEqualTo(STORED_AT);
-    assertThat(outboxEntry.nextAttemptAt()).isEqualTo(STORED_AT);
-    assertThat(outboxEntry.publishedAt()).isNull();
+    NotificationOutboxCommand command = outboxFacade.scheduledCommand;
+    assertThat(command.requestId()).isEqualTo(requestId);
+    assertThat(command.shipmentNumber()).isEqualTo("PL123456789");
+    assertThat(command.recipientEmail()).isEqualTo("recipient@example.com");
+    assertThat(command.recipientCountryCode()).isEqualTo("PL");
+    assertThat(command.senderCountryCode()).isEqualTo("DE");
+    assertThat(command.statusCode()).isEqualTo(42);
+    assertThat(command.requestedAt()).isEqualTo(STORED_AT);
   }
 
   @Test
@@ -71,7 +71,7 @@ class OrderAuditServiceTest {
             STORED_AT);
     OrderAuditService service =
         new OrderAuditService(
-            auditRepository, new CapturingNotificationOutboxRepository(), fixedClock());
+            auditRepository, new CapturingNotificationOutboxFacade(), fixedClock());
 
     Optional<OrderRequestAuditDto> audit = service.findByRequestId(requestId);
 
@@ -100,25 +100,13 @@ class OrderAuditServiceTest {
     }
   }
 
-  private static class CapturingNotificationOutboxRepository
-      implements NotificationOutboxRepository {
+  private static class CapturingNotificationOutboxFacade implements NotificationOutboxFacade {
 
-    private NotificationOutboxEntry savedEntry;
+    private NotificationOutboxCommand scheduledCommand;
 
     @Override
-    public void save(NotificationOutboxEntry entry) {
-      this.savedEntry = entry;
+    public void schedule(NotificationOutboxCommand command) {
+      this.scheduledCommand = command;
     }
-
-    @Override
-    public List<NotificationOutboxEntry> findPending(Instant now, int limit) {
-      return List.of();
-    }
-
-    @Override
-    public void markPublished(UUID id, Instant publishedAt) {}
-
-    @Override
-    public void markFailed(UUID id, Instant nextAttemptAt) {}
   }
 }

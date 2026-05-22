@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.orderaudit;
+package io.github.brogowski.order.notification.service.notificationoutbox;
 
 import java.time.Clock;
 import java.time.Duration;

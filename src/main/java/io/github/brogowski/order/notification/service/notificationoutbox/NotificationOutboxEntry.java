@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.orderaudit;
+package io.github.brogowski.order.notification.service.notificationoutbox;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import java.time.Instant;
@@ -19,20 +19,20 @@ record NotificationOutboxEntry(
     Instant nextAttemptAt,
     Instant publishedAt) {
 
-  static NotificationOutboxEntry from(OrderRequestAudit audit, Instant createdAt) {
+  static NotificationOutboxEntry from(NotificationOutboxCommand command) {
     return new NotificationOutboxEntry(
         UUID.randomUUID(),
-        audit.requestId(),
-        audit.shipmentNumber(),
-        audit.recipientEmail(),
-        audit.recipientCountryCode(),
-        audit.senderCountryCode(),
-        audit.statusCode(),
-        createdAt,
+        command.requestId(),
+        command.shipmentNumber(),
+        command.recipientEmail(),
+        command.recipientCountryCode(),
+        command.senderCountryCode(),
+        command.statusCode(),
+        command.requestedAt(),
         OutboxStatus.PENDING,
         0,
-        createdAt,
-        createdAt,
+        command.requestedAt(),
+        command.requestedAt(),
         null);
   }
 
