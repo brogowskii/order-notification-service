@@ -71,31 +71,40 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
   }
 
   @Override
-  public List<NotificationOutboxEntry> findPending(Instant now, int limit) {
+  public List<NotificationOutboxEntry> claimPending(Instant now, int limit) {
     return jdbcClient
         .sql(
             """
-            SELECT
-                id,
-                request_id,
-                shipment_number,
-                recipient_email,
-                recipient_country_code,
-                sender_country_code,
-                status_code,
-                requested_at,
-                status,
-                attempts,
-                created_at,
-                next_attempt_at,
-                published_at
-            FROM notification_outbox
-            WHERE status = :status
-              AND next_attempt_at <= :now
-            ORDER BY created_at
-            LIMIT :limit
+            WITH claimed AS (
+                SELECT id
+                FROM notification_outbox
+                WHERE status = :pendingStatus
+                  AND next_attempt_at <= :now
+                ORDER BY created_at
+                FOR UPDATE SKIP LOCKED
+                LIMIT :limit
+            )
+            UPDATE notification_outbox
+            SET status = :processingStatus
+            FROM claimed
+            WHERE notification_outbox.id = claimed.id
+            RETURNING
+                notification_outbox.id,
+                notification_outbox.request_id,
+                notification_outbox.shipment_number,
+                notification_outbox.recipient_email,
+                notification_outbox.recipient_country_code,
+                notification_outbox.sender_country_code,
+                notification_outbox.status_code,
+                notification_outbox.requested_at,
+                notification_outbox.status,
+                notification_outbox.attempts,
+                notification_outbox.created_at,
+                notification_outbox.next_attempt_at,
+                notification_outbox.published_at
             """)
-        .param("status", OutboxStatus.PENDING.name())
+        .param("pendingStatus", OutboxStatus.PENDING.name())
+        .param("processingStatus", OutboxStatus.PROCESSING.name())
         .param("now", timestamp(now))
         .param("limit", limit)
         .query(this::mapRow)
@@ -111,8 +120,10 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
             SET status = :status,
                 published_at = :publishedAt
             WHERE id = :id
+              AND status = :processingStatus
             """)
         .param("status", OutboxStatus.PUBLISHED.name())
+        .param("processingStatus", OutboxStatus.PROCESSING.name())
         .param("id", id)
         .param("publishedAt", timestamp(publishedAt))
         .update();
@@ -131,13 +142,14 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 END,
                 next_attempt_at = :nextAttemptAt
             WHERE id = :id
-              AND status = :pendingStatus
+              AND status = :processingStatus
             """)
         .param("id", id)
         .param("nextAttemptAt", timestamp(nextAttemptAt))
         .param("maxAttempts", maxAttempts)
         .param("failedStatus", OutboxStatus.FAILED.name())
         .param("pendingStatus", OutboxStatus.PENDING.name())
+        .param("processingStatus", OutboxStatus.PROCESSING.name())
         .update();
   }
 

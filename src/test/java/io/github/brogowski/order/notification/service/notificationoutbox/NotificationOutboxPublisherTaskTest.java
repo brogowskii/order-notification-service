@@ -50,6 +50,7 @@ class NotificationOutboxPublisherTaskTest {
     assertThat(message.recipientEmail()).isEqualTo("recipient@example.com");
     assertThat(repository.publishedEntryId).isEqualTo(repository.entries.get(0).id());
     assertThat(repository.publishedAt).isEqualTo(NOW);
+    assertThat(repository.entries.get(0).status()).isEqualTo(OutboxStatus.PUBLISHED);
   }
 
   @Test
@@ -85,6 +86,8 @@ class NotificationOutboxPublisherTaskTest {
     assertThat(repository.failedEntryId).isEqualTo(repository.entries.get(0).id());
     assertThat(repository.nextAttemptAt).isEqualTo(NOW.plusSeconds(10));
     assertThat(repository.failedMaxAttempts).isEqualTo(3);
+    assertThat(repository.entries.get(0).status()).isEqualTo(OutboxStatus.PENDING);
+    assertThat(repository.entries.get(0).attempts()).isEqualTo(1);
   }
 
   @Test
@@ -122,6 +125,36 @@ class NotificationOutboxPublisherTaskTest {
     assertThat(repository.entries.get(0).attempts()).isEqualTo(3);
   }
 
+  @Test
+  void skipsAlreadyClaimedOutboxEntries() {
+    InMemoryNotificationOutboxRepository repository =
+        new InMemoryNotificationOutboxRepository(
+            List.of(
+                new NotificationOutboxEntry(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    "PL123456789",
+                    "recipient@example.com",
+                    "PL",
+                    "DE",
+                    42,
+                    NOW,
+                    OutboxStatus.PROCESSING,
+                    0,
+                    NOW,
+                    NOW,
+                    null)));
+    CapturingNotificationRequestedPublisher publisher =
+        new CapturingNotificationRequestedPublisher(false);
+    NotificationOutboxPublisherTask task =
+        new NotificationOutboxPublisherTask(
+            repository, publisher, fixedClock(), 10, Duration.ofSeconds(10), 3);
+
+    task.publishPending();
+
+    assertThat(publisher.publishedMessages).isEmpty();
+  }
+
   private static Clock fixedClock() {
     return Clock.fixed(NOW, ZoneOffset.UTC);
   }
@@ -146,12 +179,34 @@ class NotificationOutboxPublisherTaskTest {
     }
 
     @Override
-    public List<NotificationOutboxEntry> findPending(Instant now, int limit) {
-      return entries.stream()
-          .filter(entry -> entry.status() == OutboxStatus.PENDING)
-          .filter(entry -> !entry.nextAttemptAt().isAfter(now))
-          .limit(limit)
-          .toList();
+    public List<NotificationOutboxEntry> claimPending(Instant now, int limit) {
+      List<NotificationOutboxEntry> claimedEntries = new ArrayList<>();
+      for (NotificationOutboxEntry entry : entries) {
+        if (claimedEntries.size() == limit) {
+          break;
+        }
+        if (entry.status() != OutboxStatus.PENDING || entry.nextAttemptAt().isAfter(now)) {
+          continue;
+        }
+        NotificationOutboxEntry claimed =
+            new NotificationOutboxEntry(
+                entry.id(),
+                entry.requestId(),
+                entry.shipmentNumber(),
+                entry.recipientEmail(),
+                entry.recipientCountryCode(),
+                entry.senderCountryCode(),
+                entry.statusCode(),
+                entry.requestedAt(),
+                OutboxStatus.PROCESSING,
+                entry.attempts(),
+                entry.createdAt(),
+                entry.nextAttemptAt(),
+                entry.publishedAt());
+        replace(entry.id(), ignored -> claimed);
+        claimedEntries.add(claimed);
+      }
+      return claimedEntries;
     }
 
     @Override

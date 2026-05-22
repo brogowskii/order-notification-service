@@ -44,7 +44,7 @@ class NotificationOutboxPublisherTask {
   @Scheduled(fixedDelayString = "${app.notification-outbox.publish-interval}")
   void publishPending() {
     Instant now = Instant.now(clock);
-    List<NotificationOutboxEntry> entries = notificationOutboxRepository.findPending(now, batchSize);
+    List<NotificationOutboxEntry> entries = notificationOutboxRepository.claimPending(now, batchSize);
 
     for (NotificationOutboxEntry entry : entries) {
       publish(entry);
