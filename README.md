@@ -129,7 +129,7 @@ The application exposes separate controls for intake and notification processing
 
 | Area | Variable | Default |
 | --- | --- | --- |
-| Intake rate limit | `INTAKE_RATE_LIMIT_ENABLED` | `true` |
+| Intake rate limit | `INTAKE_RATE_LIMIT_ENABLED` | `false` |
 | Intake max requests | `INTAKE_RATE_LIMIT_MAX_REQUESTS` | `100` |
 | Intake window | `INTAKE_RATE_LIMIT_WINDOW` | `1s` |
 | Order audit consumer concurrency | `ORDER_AUDIT_CONCURRENCY` | `1` |

@@ -38,7 +38,7 @@ management:
 app:
   intake:
     rate-limit:
-      enabled: ${INTAKE_RATE_LIMIT_ENABLED:true}
+      enabled: ${INTAKE_RATE_LIMIT_ENABLED:false}
       max-requests: ${INTAKE_RATE_LIMIT_MAX_REQUESTS:100}
       window: ${INTAKE_RATE_LIMIT_WINDOW:1s}
   kafka:
