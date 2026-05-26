@@ -149,5 +149,28 @@ The application exposes separate controls for intake and notification processing
 
 ## Deployment
 
-Public deployment URL and external smoke-test instructions will be added after the service is
-deployed to a free hosting environment.
+Public deployment:
+
+```text
+https://order-notification-service.onrender.com/
+```
+
+External health check:
+
+```bash
+curl https://order-notification-service.onrender.com/actuator/health
+```
+
+External order request example:
+
+```bash
+curl -i -X POST https://order-notification-service.onrender.com/api/v1/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "shipmentNumber": "PL123456789",
+    "recipientEmail": "recipient@example.com",
+    "recipientCountryCode": "PL",
+    "senderCountryCode": "DE",
+    "statusCode": 42
+  }'
+```
