@@ -37,6 +37,7 @@ class OrderAuditKafkaConfiguration {
       @Value("${app.kafka.consumers.order-audit.max-poll-records}") int maxPollRecords) {
     Map<String, Object> properties = new HashMap<>();
     properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+    properties.putAll(kafkaProperties.getProperties());
     properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
     properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
     properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
