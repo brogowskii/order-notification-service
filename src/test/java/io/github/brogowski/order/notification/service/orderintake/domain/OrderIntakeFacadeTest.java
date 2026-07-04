@@ -18,7 +18,7 @@ class OrderIntakeFacadeTest {
   void acceptsOrderRequestAndPublishesMessage() {
     CapturingOrderReceivedPublisher publisher = new CapturingOrderReceivedPublisher();
     OrderIntakeFacade facade =
-        new OrderIntakeFacade(publisher, () -> true, Clock.fixed(NOW, ZoneOffset.UTC));
+        new OrderIntakeFacade(publisher, Clock.fixed(NOW, ZoneOffset.UTC));
 
     OrderAcceptedDto accepted =
         facade.accept(

@@ -1,6 +1,5 @@
 package io.github.brogowski.order.notification.service.orderintake.web;
 
-import io.github.brogowski.order.notification.service.orderintake.exception.OrderIntakeRateLimitExceededException;
 import io.github.brogowski.order.notification.service.orderintake.exception.OrderIntakeUnavailableException;
 import io.github.brogowski.order.notification.service.shared.ApiErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,20 +23,6 @@ class OrderIntakeExceptionHandler {
   ResponseEntity<ApiErrorDto> handleUnavailable(
       OrderIntakeUnavailableException exception, HttpServletRequest request) {
     HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;
-    return ResponseEntity.status(status)
-        .body(
-            new ApiErrorDto(
-                Instant.now(clock),
-                status.value(),
-                status.getReasonPhrase(),
-                exception.getMessage(),
-                request.getRequestURI()));
-  }
-
-  @ExceptionHandler(OrderIntakeRateLimitExceededException.class)
-  ResponseEntity<ApiErrorDto> handleRateLimitExceeded(
-      OrderIntakeRateLimitExceededException exception, HttpServletRequest request) {
-    HttpStatus status = HttpStatus.TOO_MANY_REQUESTS;
     return ResponseEntity.status(status)
         .body(
             new ApiErrorDto(
