@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.notificationoutbox;
+package io.github.brogowski.order.notification.service.notificationoutbox.domain;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -1,8 +1,9 @@
-package io.github.brogowski.order.notification.service.notificationoutbox;
+package io.github.brogowski.order.notification.service.notificationoutbox.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
+import io.github.brogowski.order.notification.service.notificationoutbox.exception.NotificationOutboxPublishingException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;

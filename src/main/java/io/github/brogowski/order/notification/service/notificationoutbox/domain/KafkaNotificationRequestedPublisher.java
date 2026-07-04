@@ -1,6 +1,7 @@
-package io.github.brogowski.order.notification.service.notificationoutbox;
+package io.github.brogowski.order.notification.service.notificationoutbox.domain;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
+import io.github.brogowski.order.notification.service.notificationoutbox.exception.NotificationOutboxPublishingException;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

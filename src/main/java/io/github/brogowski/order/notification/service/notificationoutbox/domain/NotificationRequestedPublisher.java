@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.notificationoutbox;
+package io.github.brogowski.order.notification.service.notificationoutbox.domain;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 
