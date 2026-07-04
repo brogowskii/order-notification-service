@@ -7,10 +7,10 @@ import org.springframework.stereotype.Component;
 @Component
 class OrderReceivedKafkaListener {
 
-  private final OrderAuditService orderAuditService;
+  private final OrderAuditFacade orderAuditFacade;
 
-  OrderReceivedKafkaListener(OrderAuditService orderAuditService) {
-    this.orderAuditService = orderAuditService;
+  OrderReceivedKafkaListener(OrderAuditFacade orderAuditFacade) {
+    this.orderAuditFacade = orderAuditFacade;
   }
 
   @KafkaListener(
@@ -18,6 +18,6 @@ class OrderReceivedKafkaListener {
       groupId = "${app.kafka.consumers.order-audit.group-id}",
       containerFactory = "orderReceivedKafkaListenerContainerFactory")
   void onOrderReceived(OrderReceivedMessage message) {
-    orderAuditService.audit(message);
+    orderAuditFacade.audit(message);
   }
 }

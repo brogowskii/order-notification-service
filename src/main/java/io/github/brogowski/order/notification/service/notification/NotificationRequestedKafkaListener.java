@@ -7,10 +7,10 @@ import org.springframework.stereotype.Component;
 @Component
 class NotificationRequestedKafkaListener {
 
-  private final NotificationService notificationService;
+  private final NotificationFacade notificationFacade;
 
-  NotificationRequestedKafkaListener(NotificationService notificationService) {
-    this.notificationService = notificationService;
+  NotificationRequestedKafkaListener(NotificationFacade notificationFacade) {
+    this.notificationFacade = notificationFacade;
   }
 
   @KafkaListener(
@@ -18,6 +18,6 @@ class NotificationRequestedKafkaListener {
       groupId = "${app.kafka.consumers.notification.group-id}",
       containerFactory = "notificationRequestedKafkaListenerContainerFactory")
   void onNotificationRequested(NotificationRequestedMessage message) {
-    notificationService.notify(message);
+    notificationFacade.notify(message);
   }
 }
