@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.orderintake;
+package io.github.brogowski.order.notification.service.orderintake.domain;
 
 record CountryCode(String value) {
 

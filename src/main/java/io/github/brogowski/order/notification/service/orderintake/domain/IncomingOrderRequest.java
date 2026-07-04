@@ -1,4 +1,6 @@
-package io.github.brogowski.order.notification.service.orderintake;
+package io.github.brogowski.order.notification.service.orderintake.domain;
+
+import io.github.brogowski.order.notification.service.orderintake.dto.OrderRequestDto;
 
 record IncomingOrderRequest(
     ShipmentNumber shipmentNumber,

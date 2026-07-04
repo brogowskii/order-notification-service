@@ -1,5 +1,8 @@
-package io.github.brogowski.order.notification.service.orderintake;
+package io.github.brogowski.order.notification.service.orderintake.web;
 
+import io.github.brogowski.order.notification.service.orderintake.domain.OrderIntakeFacade;
+import io.github.brogowski.order.notification.service.orderintake.dto.OrderAcceptedDto;
+import io.github.brogowski.order.notification.service.orderintake.dto.OrderRequestDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,20 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 class OrderIntakeController {
 
   private final OrderIntakeFacade orderIntakeFacade;
-  private final OrderIntakeRateLimiter orderIntakeRateLimiter;
 
-  OrderIntakeController(
-      OrderIntakeFacade orderIntakeFacade, OrderIntakeRateLimiter orderIntakeRateLimiter) {
+  OrderIntakeController(OrderIntakeFacade orderIntakeFacade) {
     this.orderIntakeFacade = orderIntakeFacade;
-    this.orderIntakeRateLimiter = orderIntakeRateLimiter;
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.ACCEPTED)
   OrderAcceptedDto accept(@Valid @RequestBody OrderRequestDto request) {
-    if (!orderIntakeRateLimiter.tryAcquire()) {
-      throw new OrderIntakeRateLimitExceededException("Order intake rate limit exceeded");
-    }
     return orderIntakeFacade.accept(request);
   }
 }

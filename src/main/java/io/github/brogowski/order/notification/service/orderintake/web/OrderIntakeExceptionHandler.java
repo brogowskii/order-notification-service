@@ -1,5 +1,7 @@
-package io.github.brogowski.order.notification.service.orderintake;
+package io.github.brogowski.order.notification.service.orderintake.web;
 
+import io.github.brogowski.order.notification.service.orderintake.exception.OrderIntakeRateLimitExceededException;
+import io.github.brogowski.order.notification.service.orderintake.exception.OrderIntakeUnavailableException;
 import io.github.brogowski.order.notification.service.shared.ApiErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;

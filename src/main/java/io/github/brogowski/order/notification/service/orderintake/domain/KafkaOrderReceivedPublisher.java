@@ -1,6 +1,7 @@
-package io.github.brogowski.order.notification.service.orderintake;
+package io.github.brogowski.order.notification.service.orderintake.domain;
 
 import io.github.brogowski.order.notification.service.messaging.OrderReceivedMessage;
+import io.github.brogowski.order.notification.service.orderintake.exception.OrderIntakeUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

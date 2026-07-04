@@ -1,8 +1,9 @@
-package io.github.brogowski.order.notification.service.orderintake;
+package io.github.brogowski.order.notification.service.orderintake.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.github.brogowski.order.notification.service.orderintake.dto.OrderRequestDto;
 import org.junit.jupiter.api.Test;
 
 class IncomingOrderRequestTest {

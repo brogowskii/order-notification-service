@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.orderintake;
+package io.github.brogowski.order.notification.service.orderintake.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
