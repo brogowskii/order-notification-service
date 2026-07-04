@@ -6,9 +6,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.stereotype.Service;
 
-@Service
 public class NotificationFacade {
 
   private final EmailMessageFactory emailMessageFactory;

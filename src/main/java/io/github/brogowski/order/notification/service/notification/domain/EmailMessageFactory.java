@@ -1,9 +1,7 @@
 package io.github.brogowski.order.notification.service.notification.domain;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
-import org.springframework.stereotype.Component;
 
-@Component
 class EmailMessageFactory {
 
   EmailMessage create(NotificationRequestedMessage message) {
