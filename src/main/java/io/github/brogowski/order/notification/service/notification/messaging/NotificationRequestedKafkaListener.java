@@ -1,6 +1,7 @@
-package io.github.brogowski.order.notification.service.notification;
+package io.github.brogowski.order.notification.service.notification.messaging;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
+import io.github.brogowski.order.notification.service.notification.domain.NotificationFacade;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 

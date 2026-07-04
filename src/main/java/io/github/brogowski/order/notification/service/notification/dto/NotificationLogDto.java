@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.notification;
+package io.github.brogowski.order.notification.service.notification.dto;
 
 import java.time.Instant;
 import java.util.UUID;

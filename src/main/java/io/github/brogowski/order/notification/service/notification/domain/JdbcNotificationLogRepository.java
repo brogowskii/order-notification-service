@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.notification;
+package io.github.brogowski.order.notification.service.notification.domain;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

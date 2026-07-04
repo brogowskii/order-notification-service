@@ -1,13 +1,12 @@
-package io.github.brogowski.order.notification.service.notification;
+package io.github.brogowski.order.notification.service.notification.domain;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import org.springframework.stereotype.Component;
 
 @Component
-class DefaultEmailMessageFactory implements EmailMessageFactory {
+class EmailMessageFactory {
 
-  @Override
-  public EmailMessage create(NotificationRequestedMessage message) {
+  EmailMessage create(NotificationRequestedMessage message) {
     return new EmailMessage(
         message.recipientEmail(),
         "Shipment " + message.shipmentNumber() + " status update",

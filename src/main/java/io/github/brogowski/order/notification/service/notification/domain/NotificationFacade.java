@@ -1,6 +1,7 @@
-package io.github.brogowski.order.notification.service.notification;
+package io.github.brogowski.order.notification.service.notification.domain;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
+import io.github.brogowski.order.notification.service.notification.dto.NotificationLogDto;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;

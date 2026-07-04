@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.notification;
+package io.github.brogowski.order.notification.service.notification.config;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import java.util.HashMap;
