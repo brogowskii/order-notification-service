@@ -1,8 +1,5 @@
 package io.github.brogowski.order.notification.service.notificationoutbox.domain;
 
-import org.springframework.stereotype.Service;
-
-@Service
 public class NotificationOutboxFacade {
 
   private final NotificationOutboxRepository notificationOutboxRepository;

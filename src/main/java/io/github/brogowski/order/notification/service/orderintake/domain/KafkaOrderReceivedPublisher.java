@@ -4,11 +4,8 @@ import io.github.brogowski.order.notification.service.messaging.OrderReceivedMes
 import io.github.brogowski.order.notification.service.orderintake.exception.OrderIntakeUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Component;
 
-@Component
 class KafkaOrderReceivedPublisher implements OrderReceivedPublisher {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KafkaOrderReceivedPublisher.class);
@@ -17,8 +14,7 @@ class KafkaOrderReceivedPublisher implements OrderReceivedPublisher {
   private final String topicName;
 
   KafkaOrderReceivedPublisher(
-      KafkaTemplate<String, OrderReceivedMessage> kafkaTemplate,
-      @Value("${app.kafka.topics.orders-received}") String topicName) {
+      KafkaTemplate<String, OrderReceivedMessage> kafkaTemplate, String topicName) {
     this.kafkaTemplate = kafkaTemplate;
     this.topicName = topicName;
   }

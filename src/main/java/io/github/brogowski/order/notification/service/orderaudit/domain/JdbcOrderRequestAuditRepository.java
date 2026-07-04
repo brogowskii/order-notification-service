@@ -7,9 +7,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.stereotype.Repository;
 
-@Repository
 class JdbcOrderRequestAuditRepository implements OrderRequestAuditRepository {
 
   private final JdbcClient jdbcClient;

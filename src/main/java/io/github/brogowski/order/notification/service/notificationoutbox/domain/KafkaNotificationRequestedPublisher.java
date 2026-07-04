@@ -6,11 +6,8 @@ import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Component;
 
-@Component
 class KafkaNotificationRequestedPublisher implements NotificationRequestedPublisher {
 
   private final KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate;
@@ -19,8 +16,8 @@ class KafkaNotificationRequestedPublisher implements NotificationRequestedPublis
 
   KafkaNotificationRequestedPublisher(
       KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate,
-      @Value("${app.kafka.topics.notifications-requested}") String topicName,
-      @Value("${app.kafka.publish-timeout}") Duration publishTimeout) {
+      String topicName,
+      Duration publishTimeout) {
     this.kafkaTemplate = kafkaTemplate;
     this.topicName = topicName;
     this.publishTimeout = publishTimeout;

@@ -3,15 +3,7 @@ package io.github.brogowski.order.notification.service.orderintake.domain;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
-@Component
-@ConditionalOnProperty(
-    name = "app.intake.rate-limit.enabled",
-    havingValue = "true",
-    matchIfMissing = true)
 class FixedWindowOrderIntakeRateLimiter implements OrderIntakeRateLimiter {
 
   private final Clock clock;
@@ -20,10 +12,7 @@ class FixedWindowOrderIntakeRateLimiter implements OrderIntakeRateLimiter {
   private Instant windowStartedAt;
   private int usedRequests;
 
-  FixedWindowOrderIntakeRateLimiter(
-      Clock clock,
-      @Value("${app.intake.rate-limit.max-requests}") int maxRequests,
-      @Value("${app.intake.rate-limit.window}") Duration window) {
+  FixedWindowOrderIntakeRateLimiter(Clock clock, int maxRequests, Duration window) {
     if (maxRequests < 1) {
       throw new IllegalArgumentException("Order intake max requests must be positive");
     }

@@ -7,9 +7,7 @@ import io.github.brogowski.order.notification.service.orderintake.exception.Orde
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
-import org.springframework.stereotype.Service;
 
-@Service
 public class OrderIntakeFacade {
 
   private final OrderReceivedPublisher orderReceivedPublisher;

@@ -8,10 +8,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
 public class OrderAuditFacade {
 
   private final OrderRequestAuditRepository orderRequestAuditRepository;
