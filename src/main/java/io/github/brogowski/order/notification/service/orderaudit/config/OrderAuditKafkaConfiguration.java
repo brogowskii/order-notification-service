@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.orderaudit;
+package io.github.brogowski.order.notification.service.orderaudit.config;
 
 import io.github.brogowski.order.notification.service.messaging.OrderReceivedMessage;
 import java.util.HashMap;

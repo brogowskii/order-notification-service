@@ -1,8 +1,9 @@
-package io.github.brogowski.order.notification.service.orderaudit;
+package io.github.brogowski.order.notification.service.orderaudit.domain;
 
 import io.github.brogowski.order.notification.service.messaging.OrderReceivedMessage;
 import io.github.brogowski.order.notification.service.notificationoutbox.NotificationOutboxCommand;
 import io.github.brogowski.order.notification.service.notificationoutbox.NotificationOutboxFacade;
+import io.github.brogowski.order.notification.service.orderaudit.dto.OrderRequestAuditDto;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;

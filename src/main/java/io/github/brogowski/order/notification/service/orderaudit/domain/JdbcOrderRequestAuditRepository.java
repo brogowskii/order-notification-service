@@ -1,4 +1,4 @@
-package io.github.brogowski.order.notification.service.orderaudit;
+package io.github.brogowski.order.notification.service.orderaudit.domain;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
