@@ -7,6 +7,8 @@ import io.github.brogowski.order.notification.service.notification.dto.Notificat
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -30,10 +32,11 @@ class NotificationFacadeTest {
         facade.notify(new NotificationRequestedMessage(
                 requestId, "PL123456789", "recipient@example.com", "PL", "DE", 42, REQUESTED_AT));
 
-        assertThat(emailSender.sentMessage.recipientEmail()).isEqualTo("recipient@example.com");
-        assertThat(emailSender.sentMessage.subject()).isEqualTo("Shipment PL123456789 status update");
-        assertThat(emailSender.sentMessage.body()).contains("Shipment number: PL123456789");
-        assertThat(emailSender.sentMessage.body()).contains("Status code: 42");
+        EmailMessage sentMessage = emailSender.sentMessages.get(0);
+        assertThat(sentMessage.recipientEmail()).isEqualTo("recipient@example.com");
+        assertThat(sentMessage.subject()).isEqualTo("Shipment PL123456789 status update");
+        assertThat(sentMessage.body()).contains("Shipment number: PL123456789");
+        assertThat(sentMessage.body()).contains("Status code: 42");
 
         NotificationLog savedLog = notificationLogRepository.savedLog;
         assertThat(savedLog.requestId()).isEqualTo(requestId);
@@ -71,23 +74,45 @@ class NotificationFacadeTest {
         assertThat(log.orElseThrow().status()).isEqualTo("SENT");
     }
 
+    @Test
+    void skipsEmailWhenNotificationWasAlreadyLogged() {
+        CapturingEmailSender emailSender = new CapturingEmailSender();
+        InMemoryNotificationLogRepository notificationLogRepository = new InMemoryNotificationLogRepository();
+        NotificationFacade facade = new NotificationFacade(
+                new EmailMessageFactory(),
+                emailSender,
+                notificationLogRepository,
+                Clock.fixed(SENT_AT, ZoneOffset.UTC));
+        UUID requestId = UUID.randomUUID();
+        NotificationRequestedMessage message = new NotificationRequestedMessage(
+                requestId, "PL123456789", "recipient@example.com", "PL", "DE", 42, REQUESTED_AT);
+
+        facade.notify(message);
+        facade.notify(message);
+
+        assertThat(emailSender.sentMessages).hasSize(1);
+        assertThat(notificationLogRepository.saveCount).isEqualTo(1);
+    }
+
     private static class CapturingEmailSender implements EmailSender {
 
-        private EmailMessage sentMessage;
+        private final List<EmailMessage> sentMessages = new ArrayList<>();
 
         @Override
         public void send(EmailMessage message) {
-            this.sentMessage = message;
+            sentMessages.add(message);
         }
     }
 
     private static class InMemoryNotificationLogRepository implements NotificationLogRepository {
 
         private NotificationLog savedLog;
+        private int saveCount;
 
         @Override
         public void save(NotificationLog log) {
             this.savedLog = log;
+            this.saveCount++;
         }
 
         @Override

@@ -26,6 +26,10 @@ public class NotificationFacade {
     }
 
     public void notify(NotificationRequestedMessage message) {
+        if (notificationLogRepository.findByRequestId(message.requestId()).isPresent()) {
+            return;
+        }
+
         EmailMessage emailMessage = emailMessageFactory.create(message);
         emailSender.send(emailMessage);
         notificationLogRepository.save(NotificationLog.sent(message, emailMessage, Instant.now(clock)));
