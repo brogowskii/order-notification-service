@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import io.github.brogowski.order.notification.service.messaging.OrderReceivedMessage;
 import io.github.brogowski.order.notification.service.notificationoutbox.domain.NotificationOutboxCommand;
@@ -25,7 +26,7 @@ class OrderAuditFacadeTest {
 
     @Test
     void storesAuditAndCreatesNotificationOutboxEntry() {
-        InMemoryOrderRequestAuditRepository auditRepository = new InMemoryOrderRequestAuditRepository();
+        JdbcOrderRequestAuditRepository auditRepository = mock(JdbcOrderRequestAuditRepository.class);
         NotificationOutboxFacade outboxFacade = mock(NotificationOutboxFacade.class);
         OrderAuditFacade facade = new OrderAuditFacade(auditRepository, outboxFacade, fixedClock());
 
@@ -33,7 +34,9 @@ class OrderAuditFacadeTest {
         facade.audit(new OrderReceivedMessage(
                 requestId, "PL123456789", "recipient@example.com", "PL", "DE", 42, RECEIVED_AT));
 
-        OrderRequestAudit audit = auditRepository.savedAudit;
+        ArgumentCaptor<OrderRequestAudit> auditCaptor = ArgumentCaptor.forClass(OrderRequestAudit.class);
+        verify(auditRepository).save(auditCaptor.capture());
+        OrderRequestAudit audit = auditCaptor.getValue();
         assertThat(audit.requestId()).isEqualTo(requestId);
         assertThat(audit.shipmentNumber()).isEqualTo("PL123456789");
         assertThat(audit.recipientEmail()).isEqualTo("recipient@example.com");
@@ -59,9 +62,10 @@ class OrderAuditFacadeTest {
     @Test
     void returnsAuditDtoByRequestId() {
         UUID requestId = UUID.randomUUID();
-        InMemoryOrderRequestAuditRepository auditRepository = new InMemoryOrderRequestAuditRepository();
-        auditRepository.savedAudit = new OrderRequestAudit(
+        JdbcOrderRequestAuditRepository auditRepository = mock(JdbcOrderRequestAuditRepository.class);
+        OrderRequestAudit orderRequestAudit = new OrderRequestAudit(
                 requestId, "PL123456789", "recipient@example.com", "PL", "DE", 42, RECEIVED_AT, STORED_AT);
+        when(auditRepository.findByRequestId(requestId)).thenReturn(Optional.of(orderRequestAudit));
         OrderAuditFacade facade =
                 new OrderAuditFacade(auditRepository, mock(NotificationOutboxFacade.class), fixedClock());
 
@@ -75,7 +79,7 @@ class OrderAuditFacadeTest {
 
     @Test
     void rejectsInvalidConsumerMessageBeforeStoringAudit() {
-        InMemoryOrderRequestAuditRepository auditRepository = new InMemoryOrderRequestAuditRepository();
+        JdbcOrderRequestAuditRepository auditRepository = mock(JdbcOrderRequestAuditRepository.class);
         NotificationOutboxFacade outboxFacade = mock(NotificationOutboxFacade.class);
         OrderAuditFacade facade = new OrderAuditFacade(auditRepository, outboxFacade, fixedClock());
 
@@ -84,27 +88,10 @@ class OrderAuditFacadeTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Shipment number must not be longer than 100 characters");
 
-        assertThat(auditRepository.savedAudit).isNull();
-        verifyNoInteractions(outboxFacade);
+        verifyNoInteractions(auditRepository, outboxFacade);
     }
 
     private static Clock fixedClock() {
         return Clock.fixed(STORED_AT, ZoneOffset.UTC);
-    }
-
-    private static class InMemoryOrderRequestAuditRepository implements OrderRequestAuditRepository {
-
-        private OrderRequestAudit savedAudit;
-
-        @Override
-        public void save(OrderRequestAudit audit) {
-            this.savedAudit = audit;
-        }
-
-        @Override
-        public Optional<OrderRequestAudit> findByRequestId(UUID requestId) {
-            return Optional.ofNullable(savedAudit)
-                    .filter(audit -> audit.requestId().equals(requestId));
-        }
     }
 }

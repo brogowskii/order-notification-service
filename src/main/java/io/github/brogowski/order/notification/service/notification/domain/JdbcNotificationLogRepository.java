@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-class JdbcNotificationLogRepository implements NotificationLogRepository {
+class JdbcNotificationLogRepository {
 
     private final JdbcClient jdbcClient;
 
@@ -16,7 +16,6 @@ class JdbcNotificationLogRepository implements NotificationLogRepository {
         this.jdbcClient = jdbcClient;
     }
 
-    @Override
     public void save(NotificationLog log) {
         jdbcClient
                 .sql("""
@@ -55,13 +54,12 @@ class JdbcNotificationLogRepository implements NotificationLogRepository {
                 .param("statusCode", log.statusCode())
                 .param("subject", log.subject())
                 .param("body", log.body())
-                .param("status", log.status().name())
+                .param("status", log.status())
                 .param("requestedAt", timestamp(log.requestedAt()))
                 .param("sentAt", timestamp(log.sentAt()))
                 .update();
     }
 
-    @Override
     public Optional<NotificationLog> findByRequestId(UUID requestId) {
         return jdbcClient
                 .sql("""
@@ -95,7 +93,7 @@ class JdbcNotificationLogRepository implements NotificationLogRepository {
                 resultSet.getInt("status_code"),
                 resultSet.getString("subject"),
                 resultSet.getString("body"),
-                NotificationStatus.valueOf(resultSet.getString("status")),
+                resultSet.getString("status"),
                 resultSet.getTimestamp("requested_at").toInstant(),
                 resultSet.getTimestamp("sent_at").toInstant());
     }

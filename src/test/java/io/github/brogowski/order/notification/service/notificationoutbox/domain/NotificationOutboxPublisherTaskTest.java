@@ -213,7 +213,7 @@ class NotificationOutboxPublisherTaskTest {
         return Clock.fixed(NOW, ZoneOffset.UTC);
     }
 
-    private static class InMemoryNotificationOutboxRepository implements NotificationOutboxRepository {
+    private static class InMemoryNotificationOutboxRepository extends JdbcNotificationOutboxRepository {
 
         private final List<NotificationOutboxEntry> entries;
         private UUID publishedEntryId;
@@ -223,6 +223,7 @@ class NotificationOutboxPublisherTaskTest {
         private int failedMaxAttempts;
 
         private InMemoryNotificationOutboxRepository(List<NotificationOutboxEntry> entries) {
+            super(null);
             this.entries = new ArrayList<>(entries);
         }
 
@@ -333,12 +334,13 @@ class NotificationOutboxPublisherTaskTest {
         }
     }
 
-    private static class CapturingNotificationRequestedPublisher implements NotificationRequestedPublisher {
+    private static class CapturingNotificationRequestedPublisher extends KafkaNotificationRequestedPublisher {
 
         private final boolean fail;
         private final List<NotificationRequestedMessage> publishedMessages = new ArrayList<>();
 
         private CapturingNotificationRequestedPublisher(boolean fail) {
+            super(null, "notifications.requested.v1", Duration.ZERO);
             this.fail = fail;
         }
 

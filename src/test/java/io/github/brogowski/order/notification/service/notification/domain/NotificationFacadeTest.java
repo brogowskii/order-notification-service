@@ -2,6 +2,11 @@ package io.github.brogowski.order.notification.service.notification.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import io.github.brogowski.order.notification.service.notification.dto.NotificationLogDto;
@@ -13,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class NotificationFacadeTest {
 
@@ -22,14 +28,12 @@ class NotificationFacadeTest {
     @Test
     void sendsMockEmailAndStoresNotificationLog() {
         CapturingEmailSender emailSender = new CapturingEmailSender();
-        InMemoryNotificationLogRepository notificationLogRepository = new InMemoryNotificationLogRepository();
-        NotificationFacade facade = new NotificationFacade(
-                new EmailMessageFactory(),
-                emailSender,
-                notificationLogRepository,
-                Clock.fixed(SENT_AT, ZoneOffset.UTC));
-
+        JdbcNotificationLogRepository notificationLogRepository = mock(JdbcNotificationLogRepository.class);
         UUID requestId = UUID.randomUUID();
+        when(notificationLogRepository.findByRequestId(requestId)).thenReturn(Optional.empty());
+        NotificationFacade facade =
+                new NotificationFacade(emailSender, notificationLogRepository, Clock.fixed(SENT_AT, ZoneOffset.UTC));
+
         facade.notify(new NotificationRequestedMessage(
                 requestId, "PL123456789", "recipient@example.com", "PL", "DE", 42, REQUESTED_AT));
 
@@ -39,9 +43,11 @@ class NotificationFacadeTest {
         assertThat(sentMessage.body()).contains("Shipment number: PL123456789");
         assertThat(sentMessage.body()).contains("Status code: 42");
 
-        NotificationLog savedLog = notificationLogRepository.savedLog;
+        ArgumentCaptor<NotificationLog> logCaptor = ArgumentCaptor.forClass(NotificationLog.class);
+        verify(notificationLogRepository).save(logCaptor.capture());
+        NotificationLog savedLog = logCaptor.getValue();
         assertThat(savedLog.requestId()).isEqualTo(requestId);
-        assertThat(savedLog.status()).isEqualTo(NotificationStatus.SENT);
+        assertThat(savedLog.status()).isEqualTo("SENT");
         assertThat(savedLog.requestedAt()).isEqualTo(REQUESTED_AT);
         assertThat(savedLog.sentAt()).isEqualTo(SENT_AT);
     }
@@ -49,8 +55,8 @@ class NotificationFacadeTest {
     @Test
     void returnsNotificationLogByRequestId() {
         UUID requestId = UUID.randomUUID();
-        InMemoryNotificationLogRepository notificationLogRepository = new InMemoryNotificationLogRepository();
-        notificationLogRepository.savedLog = new NotificationLog(
+        JdbcNotificationLogRepository notificationLogRepository = mock(JdbcNotificationLogRepository.class);
+        NotificationLog notificationLog = new NotificationLog(
                 requestId,
                 "PL123456789",
                 "recipient@example.com",
@@ -59,14 +65,12 @@ class NotificationFacadeTest {
                 42,
                 "Shipment PL123456789 status update",
                 "body",
-                NotificationStatus.SENT,
+                "SENT",
                 REQUESTED_AT,
                 SENT_AT);
+        when(notificationLogRepository.findByRequestId(requestId)).thenReturn(Optional.of(notificationLog));
         NotificationFacade facade = new NotificationFacade(
-                new EmailMessageFactory(),
-                new CapturingEmailSender(),
-                notificationLogRepository,
-                Clock.fixed(SENT_AT, ZoneOffset.UTC));
+                new CapturingEmailSender(), notificationLogRepository, Clock.fixed(SENT_AT, ZoneOffset.UTC));
 
         Optional<NotificationLogDto> log = facade.findByRequestId(requestId);
 
@@ -78,13 +82,25 @@ class NotificationFacadeTest {
     @Test
     void skipsEmailWhenNotificationWasAlreadyLogged() {
         CapturingEmailSender emailSender = new CapturingEmailSender();
-        InMemoryNotificationLogRepository notificationLogRepository = new InMemoryNotificationLogRepository();
-        NotificationFacade facade = new NotificationFacade(
-                new EmailMessageFactory(),
-                emailSender,
-                notificationLogRepository,
-                Clock.fixed(SENT_AT, ZoneOffset.UTC));
+        JdbcNotificationLogRepository notificationLogRepository = mock(JdbcNotificationLogRepository.class);
         UUID requestId = UUID.randomUUID();
+        NotificationLog notificationLog = new NotificationLog(
+                requestId,
+                "PL123456789",
+                "recipient@example.com",
+                "PL",
+                "DE",
+                42,
+                "Shipment PL123456789 status update",
+                "body",
+                "SENT",
+                REQUESTED_AT,
+                SENT_AT);
+        when(notificationLogRepository.findByRequestId(requestId))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(notificationLog));
+        NotificationFacade facade =
+                new NotificationFacade(emailSender, notificationLogRepository, Clock.fixed(SENT_AT, ZoneOffset.UTC));
         NotificationRequestedMessage message = new NotificationRequestedMessage(
                 requestId, "PL123456789", "recipient@example.com", "PL", "DE", 42, REQUESTED_AT);
 
@@ -92,18 +108,15 @@ class NotificationFacadeTest {
         facade.notify(message);
 
         assertThat(emailSender.sentMessages).hasSize(1);
-        assertThat(notificationLogRepository.saveCount).isEqualTo(1);
+        verify(notificationLogRepository, times(1)).save(org.mockito.ArgumentMatchers.any(NotificationLog.class));
     }
 
     @Test
     void rejectsInvalidConsumerMessageBeforeSendingEmail() {
         CapturingEmailSender emailSender = new CapturingEmailSender();
-        InMemoryNotificationLogRepository notificationLogRepository = new InMemoryNotificationLogRepository();
-        NotificationFacade facade = new NotificationFacade(
-                new EmailMessageFactory(),
-                emailSender,
-                notificationLogRepository,
-                Clock.fixed(SENT_AT, ZoneOffset.UTC));
+        JdbcNotificationLogRepository notificationLogRepository = mock(JdbcNotificationLogRepository.class);
+        NotificationFacade facade =
+                new NotificationFacade(emailSender, notificationLogRepository, Clock.fixed(SENT_AT, ZoneOffset.UTC));
 
         assertThatThrownBy(() -> facade.notify(new NotificationRequestedMessage(
                         UUID.randomUUID(), "A".repeat(101), "recipient@example.com", "PL", "DE", 42, REQUESTED_AT)))
@@ -111,7 +124,7 @@ class NotificationFacadeTest {
                 .hasMessage("Shipment number must not be longer than 100 characters");
 
         assertThat(emailSender.sentMessages).isEmpty();
-        assertThat(notificationLogRepository.saveCount).isZero();
+        verifyNoInteractions(notificationLogRepository);
     }
 
     private static class CapturingEmailSender implements EmailSender {
@@ -121,23 +134,6 @@ class NotificationFacadeTest {
         @Override
         public void send(EmailMessage message) {
             sentMessages.add(message);
-        }
-    }
-
-    private static class InMemoryNotificationLogRepository implements NotificationLogRepository {
-
-        private NotificationLog savedLog;
-        private int saveCount;
-
-        @Override
-        public void save(NotificationLog log) {
-            this.savedLog = log;
-            this.saveCount++;
-        }
-
-        @Override
-        public Optional<NotificationLog> findByRequestId(UUID requestId) {
-            return Optional.ofNullable(savedLog).filter(log -> log.requestId().equals(requestId));
         }
     }
 }

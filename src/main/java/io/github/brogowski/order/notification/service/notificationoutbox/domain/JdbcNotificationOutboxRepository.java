@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
+class JdbcNotificationOutboxRepository {
 
     private final JdbcClient jdbcClient;
 
@@ -16,7 +16,6 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
         this.jdbcClient = jdbcClient;
     }
 
-    @Override
     public void save(NotificationOutboxEntry entry) {
         jdbcClient
                 .sql("""
@@ -70,7 +69,6 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 .update();
     }
 
-    @Override
     public List<NotificationOutboxEntry> claimPending(Instant now, Instant processingExpiredBefore, int limit) {
         return jdbcClient
                 .sql("""
@@ -118,7 +116,6 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 .list();
     }
 
-    @Override
     public void markPublished(UUID id, Instant publishedAt) {
         jdbcClient
                 .sql("""
@@ -136,7 +133,6 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 .update();
     }
 
-    @Override
     public void markFailed(UUID id, Instant nextAttemptAt, int maxAttempts) {
         jdbcClient
                 .sql("""

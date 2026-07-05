@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-class JdbcOrderRequestAuditRepository implements OrderRequestAuditRepository {
+class JdbcOrderRequestAuditRepository {
 
     private final JdbcClient jdbcClient;
 
@@ -16,7 +16,6 @@ class JdbcOrderRequestAuditRepository implements OrderRequestAuditRepository {
         this.jdbcClient = jdbcClient;
     }
 
-    @Override
     public void save(OrderRequestAudit audit) {
         jdbcClient
                 .sql("""
@@ -52,7 +51,6 @@ class JdbcOrderRequestAuditRepository implements OrderRequestAuditRepository {
                 .update();
     }
 
-    @Override
     public Optional<OrderRequestAudit> findByRequestId(UUID requestId) {
         return jdbcClient
                 .sql("""

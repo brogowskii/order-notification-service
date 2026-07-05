@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.springframework.kafka.core.KafkaTemplate;
 
-class KafkaNotificationRequestedPublisher implements NotificationRequestedPublisher {
+class KafkaNotificationRequestedPublisher {
 
     private final KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate;
     private final String topicName;
@@ -23,7 +23,6 @@ class KafkaNotificationRequestedPublisher implements NotificationRequestedPublis
         this.publishTimeout = publishTimeout;
     }
 
-    @Override
     public void publish(NotificationRequestedMessage message) {
         try {
             kafkaTemplate
