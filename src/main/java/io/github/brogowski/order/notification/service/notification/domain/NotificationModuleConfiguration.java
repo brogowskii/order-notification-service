@@ -10,9 +10,8 @@ class NotificationModuleConfiguration {
 
     @Bean
     NotificationFacade notificationFacade(JdbcClient jdbcClient, Clock clock) {
-        final EmailMessageFactory emailMessageFactory = new EmailMessageFactory();
         final MockEmailSender emailSender = new MockEmailSender();
         final JdbcNotificationLogRepository notificationLogRepository = new JdbcNotificationLogRepository(jdbcClient);
-        return new NotificationFacade(emailMessageFactory, emailSender, notificationLogRepository, clock);
+        return new NotificationFacade(emailSender, notificationLogRepository, clock);
     }
 }

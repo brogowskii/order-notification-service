@@ -9,17 +9,11 @@ import java.util.UUID;
 
 public class NotificationFacade {
 
-    private final EmailMessageFactory emailMessageFactory;
     private final EmailSender emailSender;
-    private final NotificationLogRepository notificationLogRepository;
+    private final JdbcNotificationLogRepository notificationLogRepository;
     private final Clock clock;
 
-    NotificationFacade(
-            EmailMessageFactory emailMessageFactory,
-            EmailSender emailSender,
-            NotificationLogRepository notificationLogRepository,
-            Clock clock) {
-        this.emailMessageFactory = emailMessageFactory;
+    NotificationFacade(EmailSender emailSender, JdbcNotificationLogRepository notificationLogRepository, Clock clock) {
         this.emailSender = emailSender;
         this.notificationLogRepository = notificationLogRepository;
         this.clock = clock;
@@ -31,12 +25,28 @@ public class NotificationFacade {
             return;
         }
 
-        EmailMessage emailMessage = emailMessageFactory.create(request);
+        EmailMessage emailMessage = createEmailMessage(request);
         emailSender.send(emailMessage);
         notificationLogRepository.save(NotificationLog.sent(request, emailMessage, Instant.now(clock)));
     }
 
     public Optional<NotificationLogDto> findByRequestId(UUID requestId) {
         return notificationLogRepository.findByRequestId(requestId).map(NotificationLog::toDto);
+    }
+
+    private static EmailMessage createEmailMessage(NotificationRequest request) {
+        return new EmailMessage(
+                request.recipientEmail(), "Shipment " + request.shipmentNumber() + " status update", """
+        Shipment number: %s
+        Recipient email: %s
+        Recipient country: %s
+        Sender country: %s
+        Status code: %d
+        """.formatted(
+                                request.shipmentNumber(),
+                                request.recipientEmail(),
+                                request.recipientCountryCode(),
+                                request.senderCountryCode(),
+                                request.statusCode()));
     }
 }

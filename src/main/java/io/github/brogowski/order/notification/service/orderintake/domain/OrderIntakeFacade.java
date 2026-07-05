@@ -9,10 +9,10 @@ import java.util.UUID;
 
 public class OrderIntakeFacade {
 
-    private final OrderReceivedPublisher orderReceivedPublisher;
+    private final KafkaOrderReceivedPublisher orderReceivedPublisher;
     private final Clock clock;
 
-    OrderIntakeFacade(OrderReceivedPublisher orderReceivedPublisher, Clock clock) {
+    OrderIntakeFacade(KafkaOrderReceivedPublisher orderReceivedPublisher, Clock clock) {
         this.orderReceivedPublisher = orderReceivedPublisher;
         this.clock = clock;
     }

@@ -12,12 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 public class OrderAuditFacade {
 
-    private final OrderRequestAuditRepository orderRequestAuditRepository;
+    private final JdbcOrderRequestAuditRepository orderRequestAuditRepository;
     private final NotificationOutboxFacade notificationOutboxFacade;
     private final Clock clock;
 
     OrderAuditFacade(
-            OrderRequestAuditRepository orderRequestAuditRepository,
+            JdbcOrderRequestAuditRepository orderRequestAuditRepository,
             NotificationOutboxFacade notificationOutboxFacade,
             Clock clock) {
         this.orderRequestAuditRepository = orderRequestAuditRepository;

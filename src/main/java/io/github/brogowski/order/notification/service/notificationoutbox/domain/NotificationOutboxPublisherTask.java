@@ -9,8 +9,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 class NotificationOutboxPublisherTask {
 
-    private final NotificationOutboxRepository notificationOutboxRepository;
-    private final NotificationRequestedPublisher notificationRequestedPublisher;
+    private final JdbcNotificationOutboxRepository notificationOutboxRepository;
+    private final KafkaNotificationRequestedPublisher notificationRequestedPublisher;
     private final Clock clock;
     private final int batchSize;
     private final Duration retryDelay;
@@ -18,8 +18,8 @@ class NotificationOutboxPublisherTask {
     private final int maxAttempts;
 
     NotificationOutboxPublisherTask(
-            NotificationOutboxRepository notificationOutboxRepository,
-            NotificationRequestedPublisher notificationRequestedPublisher,
+            JdbcNotificationOutboxRepository notificationOutboxRepository,
+            KafkaNotificationRequestedPublisher notificationRequestedPublisher,
             Clock clock,
             int batchSize,
             Duration retryDelay,

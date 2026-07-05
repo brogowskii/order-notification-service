@@ -13,9 +13,11 @@ record NotificationLog(
         int statusCode,
         String subject,
         String body,
-        NotificationStatus status,
+        String status,
         Instant requestedAt,
         Instant sentAt) {
+
+    private static final String SENT = "SENT";
 
     static NotificationLog sent(NotificationRequest request, EmailMessage emailMessage, Instant sentAt) {
         return new NotificationLog(
@@ -27,7 +29,7 @@ record NotificationLog(
                 request.statusCode(),
                 emailMessage.subject(),
                 emailMessage.body(),
-                NotificationStatus.SENT,
+                SENT,
                 request.requestedAt(),
                 sentAt);
     }
@@ -42,7 +44,7 @@ record NotificationLog(
                 statusCode,
                 subject,
                 body,
-                status.name(),
+                status,
                 requestedAt,
                 sentAt);
     }

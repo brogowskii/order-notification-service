@@ -2,9 +2,9 @@ package io.github.brogowski.order.notification.service.notificationoutbox.domain
 
 public class NotificationOutboxFacade {
 
-    private final NotificationOutboxRepository notificationOutboxRepository;
+    private final JdbcNotificationOutboxRepository notificationOutboxRepository;
 
-    NotificationOutboxFacade(NotificationOutboxRepository notificationOutboxRepository) {
+    NotificationOutboxFacade(JdbcNotificationOutboxRepository notificationOutboxRepository) {
         this.notificationOutboxRepository = notificationOutboxRepository;
     }
 
