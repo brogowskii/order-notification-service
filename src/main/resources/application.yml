@@ -42,14 +42,20 @@ app:
       orders-received: ${ORDERS_RECEIVED_TOPIC:orders.received.v1}
       notifications-requested: ${NOTIFICATIONS_REQUESTED_TOPIC:notifications.requested.v1}
     consumers:
+      retry:
+        initial-interval: ${KAFKA_CONSUMER_RETRY_INITIAL_INTERVAL:1s}
+        max-interval: ${KAFKA_CONSUMER_RETRY_MAX_INTERVAL:10s}
+        max-elapsed-time: ${KAFKA_CONSUMER_RETRY_MAX_ELAPSED_TIME:1m}
       order-audit:
         group-id: ${ORDER_AUDIT_CONSUMER_GROUP_ID:order-audit}
         concurrency: ${ORDER_AUDIT_CONCURRENCY:1}
         max-poll-records: ${ORDER_AUDIT_MAX_POLL_RECORDS:100}
+        dead-letter-topic: ${ORDER_AUDIT_DLT_TOPIC:orders.received.v1.DLT}
       notification:
         group-id: ${NOTIFICATION_CONSUMER_GROUP_ID:notification}
         concurrency: ${NOTIFICATION_CONCURRENCY:1}
         max-poll-records: ${NOTIFICATION_MAX_POLL_RECORDS:50}
+        dead-letter-topic: ${NOTIFICATION_DLT_TOPIC:notifications.requested.v1.DLT}
   notification-outbox:
     enabled: ${NOTIFICATION_OUTBOX_ENABLED:true}
     publish-interval: ${NOTIFICATION_OUTBOX_PUBLISH_INTERVAL:2s}
