@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test;
 class NotificationOutboxPublisherTaskTest {
 
     private static final Instant NOW = Instant.parse("2026-05-21T10:00:00Z");
+    private static final Duration RETRY_DELAY = Duration.ofSeconds(10);
+    private static final Duration PROCESSING_TIMEOUT = Duration.ofMinutes(1);
 
     @Test
     void publishesPendingOutboxEntriesAndMarksThemPublished() {
@@ -34,10 +36,11 @@ class NotificationOutboxPublisherTaskTest {
                         0,
                         NOW,
                         NOW,
+                        null,
                         null)));
         CapturingNotificationRequestedPublisher publisher = new CapturingNotificationRequestedPublisher(false);
-        NotificationOutboxPublisherTask task =
-                new NotificationOutboxPublisherTask(repository, publisher, fixedClock(), 10, Duration.ofSeconds(10), 3);
+        NotificationOutboxPublisherTask task = new NotificationOutboxPublisherTask(
+                repository, publisher, fixedClock(), 10, RETRY_DELAY, PROCESSING_TIMEOUT, 3);
 
         task.publishPending();
 
@@ -67,13 +70,15 @@ class NotificationOutboxPublisherTaskTest {
                         0,
                         NOW,
                         NOW,
+                        null,
                         null)));
         NotificationOutboxPublisherTask task = new NotificationOutboxPublisherTask(
                 repository,
                 new CapturingNotificationRequestedPublisher(true),
                 fixedClock(),
                 10,
-                Duration.ofSeconds(10),
+                RETRY_DELAY,
+                PROCESSING_TIMEOUT,
                 3);
 
         task.publishPending();
@@ -102,13 +107,15 @@ class NotificationOutboxPublisherTaskTest {
                         2,
                         NOW,
                         NOW,
+                        null,
                         null)));
         NotificationOutboxPublisherTask task = new NotificationOutboxPublisherTask(
                 repository,
                 new CapturingNotificationRequestedPublisher(true),
                 fixedClock(),
                 10,
-                Duration.ofSeconds(10),
+                RETRY_DELAY,
+                PROCESSING_TIMEOUT,
                 3);
 
         task.publishPending();
@@ -118,7 +125,7 @@ class NotificationOutboxPublisherTaskTest {
     }
 
     @Test
-    void skipsAlreadyClaimedOutboxEntries() {
+    void skipsFreshlyClaimedOutboxEntries() {
         InMemoryNotificationOutboxRepository repository =
                 new InMemoryNotificationOutboxRepository(List.of(new NotificationOutboxEntry(
                         UUID.randomUUID(),
@@ -133,14 +140,44 @@ class NotificationOutboxPublisherTaskTest {
                         0,
                         NOW,
                         NOW,
+                        NOW,
                         null)));
         CapturingNotificationRequestedPublisher publisher = new CapturingNotificationRequestedPublisher(false);
-        NotificationOutboxPublisherTask task =
-                new NotificationOutboxPublisherTask(repository, publisher, fixedClock(), 10, Duration.ofSeconds(10), 3);
+        NotificationOutboxPublisherTask task = new NotificationOutboxPublisherTask(
+                repository, publisher, fixedClock(), 10, RETRY_DELAY, PROCESSING_TIMEOUT, 3);
 
         task.publishPending();
 
         assertThat(publisher.publishedMessages).isEmpty();
+    }
+
+    @Test
+    void reclaimsStaleProcessingOutboxEntries() {
+        InMemoryNotificationOutboxRepository repository =
+                new InMemoryNotificationOutboxRepository(List.of(new NotificationOutboxEntry(
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        "PL123456789",
+                        "recipient@example.com",
+                        "PL",
+                        "DE",
+                        42,
+                        NOW,
+                        OutboxStatus.PROCESSING,
+                        0,
+                        NOW,
+                        NOW,
+                        NOW.minus(PROCESSING_TIMEOUT).minusSeconds(1),
+                        null)));
+        CapturingNotificationRequestedPublisher publisher = new CapturingNotificationRequestedPublisher(false);
+        NotificationOutboxPublisherTask task = new NotificationOutboxPublisherTask(
+                repository, publisher, fixedClock(), 10, RETRY_DELAY, PROCESSING_TIMEOUT, 3);
+
+        task.publishPending();
+
+        assertThat(publisher.publishedMessages).hasSize(1);
+        assertThat(repository.publishedEntryId)
+                .isEqualTo(repository.entries.get(0).id());
     }
 
     private static Clock fixedClock() {
@@ -166,14 +203,13 @@ class NotificationOutboxPublisherTaskTest {
         }
 
         @Override
-        public List<NotificationOutboxEntry> claimPending(Instant now, int limit) {
+        public List<NotificationOutboxEntry> claimPending(Instant now, Instant processingExpiredBefore, int limit) {
             List<NotificationOutboxEntry> claimedEntries = new ArrayList<>();
             for (NotificationOutboxEntry entry : entries) {
                 if (claimedEntries.size() == limit) {
                     break;
                 }
-                if (entry.status() != OutboxStatus.PENDING
-                        || entry.nextAttemptAt().isAfter(now)) {
+                if (!isClaimable(entry, now, processingExpiredBefore)) {
                     continue;
                 }
                 NotificationOutboxEntry claimed = new NotificationOutboxEntry(
@@ -189,11 +225,23 @@ class NotificationOutboxPublisherTaskTest {
                         entry.attempts(),
                         entry.createdAt(),
                         entry.nextAttemptAt(),
+                        now,
                         entry.publishedAt());
                 replace(entry.id(), ignored -> claimed);
                 claimedEntries.add(claimed);
             }
             return claimedEntries;
+        }
+
+        private static boolean isClaimable(
+                NotificationOutboxEntry entry, Instant now, Instant processingExpiredBefore) {
+            if (entry.status() == OutboxStatus.PENDING) {
+                return !entry.nextAttemptAt().isAfter(now);
+            }
+            if (entry.status() == OutboxStatus.PROCESSING) {
+                return entry.claimedAt() == null || !entry.claimedAt().isAfter(processingExpiredBefore);
+            }
+            return false;
         }
 
         @Override
@@ -215,6 +263,7 @@ class NotificationOutboxPublisherTaskTest {
                             entry.attempts(),
                             entry.createdAt(),
                             entry.nextAttemptAt(),
+                            null,
                             publishedAt));
         }
 
@@ -239,6 +288,7 @@ class NotificationOutboxPublisherTaskTest {
                         attempts,
                         entry.createdAt(),
                         nextAttemptAt,
+                        null,
                         entry.publishedAt());
             });
         }

@@ -8,7 +8,7 @@ interface NotificationOutboxRepository {
 
     void save(NotificationOutboxEntry entry);
 
-    List<NotificationOutboxEntry> claimPending(Instant now, int limit);
+    List<NotificationOutboxEntry> claimPending(Instant now, Instant processingExpiredBefore, int limit);
 
     void markPublished(UUID id, Instant publishedAt);
 

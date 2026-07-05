@@ -14,6 +14,7 @@ class NotificationOutboxPublisherTask {
     private final Clock clock;
     private final int batchSize;
     private final Duration retryDelay;
+    private final Duration processingTimeout;
     private final int maxAttempts;
 
     NotificationOutboxPublisherTask(
@@ -22,22 +23,29 @@ class NotificationOutboxPublisherTask {
             Clock clock,
             int batchSize,
             Duration retryDelay,
+            Duration processingTimeout,
             int maxAttempts) {
         if (maxAttempts < 1) {
             throw new IllegalArgumentException("Notification outbox max attempts must be positive");
+        }
+        if (processingTimeout.isZero() || processingTimeout.isNegative()) {
+            throw new IllegalArgumentException("Notification outbox processing timeout must be positive");
         }
         this.notificationOutboxRepository = notificationOutboxRepository;
         this.notificationRequestedPublisher = notificationRequestedPublisher;
         this.clock = clock;
         this.batchSize = batchSize;
         this.retryDelay = retryDelay;
+        this.processingTimeout = processingTimeout;
         this.maxAttempts = maxAttempts;
     }
 
     @Scheduled(fixedDelayString = "${app.notification-outbox.publish-interval}")
     void publishPending() {
         Instant now = Instant.now(clock);
-        List<NotificationOutboxEntry> entries = notificationOutboxRepository.claimPending(now, batchSize);
+        Instant processingExpiredBefore = now.minus(processingTimeout);
+        List<NotificationOutboxEntry> entries =
+                notificationOutboxRepository.claimPending(now, processingExpiredBefore, batchSize);
 
         for (NotificationOutboxEntry entry : entries) {
             publish(entry);

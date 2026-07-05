@@ -33,6 +33,7 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 attempts,
                 created_at,
                 next_attempt_at,
+                claimed_at,
                 published_at
             ) VALUES (
                 :id,
@@ -47,6 +48,7 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 :attempts,
                 :createdAt,
                 :nextAttemptAt,
+                :claimedAt,
                 :publishedAt
             )
             ON CONFLICT (request_id) DO NOTHING
@@ -63,25 +65,32 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 .param("attempts", entry.attempts())
                 .param("createdAt", timestamp(entry.createdAt()))
                 .param("nextAttemptAt", timestamp(entry.nextAttemptAt()))
+                .param("claimedAt", timestampOrNull(entry.claimedAt()))
                 .param("publishedAt", timestampOrNull(entry.publishedAt()))
                 .update();
     }
 
     @Override
-    public List<NotificationOutboxEntry> claimPending(Instant now, int limit) {
+    public List<NotificationOutboxEntry> claimPending(Instant now, Instant processingExpiredBefore, int limit) {
         return jdbcClient
                 .sql("""
             WITH claimed AS (
                 SELECT id
                 FROM notification_outbox
-                WHERE status = :pendingStatus
-                  AND next_attempt_at <= :now
+                WHERE (
+                    status = :pendingStatus
+                    AND next_attempt_at <= :now
+                ) OR (
+                    status = :processingStatus
+                    AND (claimed_at IS NULL OR claimed_at <= :processingExpiredBefore)
+                )
                 ORDER BY created_at
                 FOR UPDATE SKIP LOCKED
                 LIMIT :limit
             )
             UPDATE notification_outbox
-            SET status = :processingStatus
+            SET status = :processingStatus,
+                claimed_at = :now
             FROM claimed
             WHERE notification_outbox.id = claimed.id
             RETURNING
@@ -97,11 +106,13 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 notification_outbox.attempts,
                 notification_outbox.created_at,
                 notification_outbox.next_attempt_at,
+                notification_outbox.claimed_at,
                 notification_outbox.published_at
             """)
                 .param("pendingStatus", OutboxStatus.PENDING.name())
                 .param("processingStatus", OutboxStatus.PROCESSING.name())
                 .param("now", timestamp(now))
+                .param("processingExpiredBefore", timestamp(processingExpiredBefore))
                 .param("limit", limit)
                 .query(this::mapRow)
                 .list();
@@ -113,6 +124,7 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 .sql("""
             UPDATE notification_outbox
             SET status = :status,
+                claimed_at = NULL,
                 published_at = :publishedAt
             WHERE id = :id
               AND status = :processingStatus
@@ -134,6 +146,7 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                     WHEN attempts + 1 >= :maxAttempts THEN :failedStatus
                     ELSE :pendingStatus
                 END,
+                claimed_at = NULL,
                 next_attempt_at = :nextAttemptAt
             WHERE id = :id
               AND status = :processingStatus
@@ -161,6 +174,7 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 resultSet.getInt("attempts"),
                 resultSet.getTimestamp("created_at").toInstant(),
                 resultSet.getTimestamp("next_attempt_at").toInstant(),
+                timestampToInstant(resultSet.getTimestamp("claimed_at")),
                 timestampToInstant(resultSet.getTimestamp("published_at")));
     }
 

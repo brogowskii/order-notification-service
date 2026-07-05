@@ -28,6 +28,7 @@ class NotificationOutboxModuleConfiguration {
             @Value("${app.kafka.publish-timeout}") Duration publishTimeout,
             @Value("${app.notification-outbox.batch-size}") int batchSize,
             @Value("${app.notification-outbox.retry-delay}") Duration retryDelay,
+            @Value("${app.notification-outbox.processing-timeout}") Duration processingTimeout,
             @Value("${app.notification-outbox.max-attempts}") int maxAttempts) {
         final JdbcNotificationOutboxRepository notificationOutboxRepository =
                 new JdbcNotificationOutboxRepository(jdbcClient);
@@ -39,6 +40,7 @@ class NotificationOutboxModuleConfiguration {
                 clock,
                 batchSize,
                 retryDelay,
+                processingTimeout,
                 maxAttempts);
     }
 }

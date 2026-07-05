@@ -17,6 +17,7 @@ record NotificationOutboxEntry(
         int attempts,
         Instant createdAt,
         Instant nextAttemptAt,
+        Instant claimedAt,
         Instant publishedAt) {
 
     static NotificationOutboxEntry from(NotificationOutboxCommand command) {
@@ -33,6 +34,7 @@ record NotificationOutboxEntry(
                 0,
                 command.requestedAt(),
                 command.requestedAt(),
+                null,
                 null);
     }
 
