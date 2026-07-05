@@ -33,4 +33,18 @@ class IncomingOrderRequestTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Country code must use ISO alpha-2 uppercase format");
     }
+
+    @Test
+    void rejectsShipmentNumberLongerThanDatabaseColumn() {
+        assertThatThrownBy(() -> new ShipmentNumber("A".repeat(101)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Shipment number must not be longer than 100 characters");
+    }
+
+    @Test
+    void rejectsRecipientEmailLongerThanDatabaseColumn() {
+        assertThatThrownBy(() -> new RecipientEmail("a".repeat(310) + "@example.com"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Recipient email must not be longer than 320 characters");
+    }
 }
