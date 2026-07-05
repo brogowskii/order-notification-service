@@ -27,7 +27,7 @@ class KafkaNotificationRequestedPublisher implements NotificationRequestedPublis
     public void publish(NotificationRequestedMessage message) {
         try {
             kafkaTemplate
-                    .send(topicName, message.requestId().toString(), message)
+                    .send(topicName, message.shipmentNumber(), message)
                     .get(publishTimeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();

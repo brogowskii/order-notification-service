@@ -1,8 +1,10 @@
 package io.github.brogowski.order.notification.service.orderaudit.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.github.brogowski.order.notification.service.messaging.OrderReceivedMessage;
 import io.github.brogowski.order.notification.service.notificationoutbox.domain.NotificationOutboxCommand;
@@ -69,6 +71,21 @@ class OrderAuditFacadeTest {
         assertThat(audit.orElseThrow().requestId()).isEqualTo(requestId);
         assertThat(audit.orElseThrow().receivedAt()).isEqualTo(RECEIVED_AT);
         assertThat(audit.orElseThrow().storedAt()).isEqualTo(STORED_AT);
+    }
+
+    @Test
+    void rejectsInvalidConsumerMessageBeforeStoringAudit() {
+        InMemoryOrderRequestAuditRepository auditRepository = new InMemoryOrderRequestAuditRepository();
+        NotificationOutboxFacade outboxFacade = mock(NotificationOutboxFacade.class);
+        OrderAuditFacade facade = new OrderAuditFacade(auditRepository, outboxFacade, fixedClock());
+
+        assertThatThrownBy(() -> facade.audit(new OrderReceivedMessage(
+                        UUID.randomUUID(), "A".repeat(101), "recipient@example.com", "PL", "DE", 42, RECEIVED_AT)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Shipment number must not be longer than 100 characters");
+
+        assertThat(auditRepository.savedAudit).isNull();
+        verifyNoInteractions(outboxFacade);
     }
 
     private static Clock fixedClock() {

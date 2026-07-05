@@ -1,22 +1,20 @@
 package io.github.brogowski.order.notification.service.notification.domain;
 
-import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
-
 class EmailMessageFactory {
 
-    EmailMessage create(NotificationRequestedMessage message) {
+    EmailMessage create(NotificationRequest request) {
         return new EmailMessage(
-                message.recipientEmail(), "Shipment " + message.shipmentNumber() + " status update", """
+                request.recipientEmail(), "Shipment " + request.shipmentNumber() + " status update", """
         Shipment number: %s
         Recipient email: %s
         Recipient country: %s
         Sender country: %s
         Status code: %d
         """.formatted(
-                                message.shipmentNumber(),
-                                message.recipientEmail(),
-                                message.recipientCountryCode(),
-                                message.senderCountryCode(),
-                                message.statusCode()));
+                                request.shipmentNumber(),
+                                request.recipientEmail(),
+                                request.recipientCountryCode(),
+                                request.senderCountryCode(),
+                                request.statusCode()));
     }
 }

@@ -1,6 +1,7 @@
 package io.github.brogowski.order.notification.service.notification.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import io.github.brogowski.order.notification.service.notification.dto.NotificationLogDto;
@@ -92,6 +93,25 @@ class NotificationFacadeTest {
 
         assertThat(emailSender.sentMessages).hasSize(1);
         assertThat(notificationLogRepository.saveCount).isEqualTo(1);
+    }
+
+    @Test
+    void rejectsInvalidConsumerMessageBeforeSendingEmail() {
+        CapturingEmailSender emailSender = new CapturingEmailSender();
+        InMemoryNotificationLogRepository notificationLogRepository = new InMemoryNotificationLogRepository();
+        NotificationFacade facade = new NotificationFacade(
+                new EmailMessageFactory(),
+                emailSender,
+                notificationLogRepository,
+                Clock.fixed(SENT_AT, ZoneOffset.UTC));
+
+        assertThatThrownBy(() -> facade.notify(new NotificationRequestedMessage(
+                        UUID.randomUUID(), "A".repeat(101), "recipient@example.com", "PL", "DE", 42, REQUESTED_AT)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Shipment number must not be longer than 100 characters");
+
+        assertThat(emailSender.sentMessages).isEmpty();
+        assertThat(notificationLogRepository.saveCount).isZero();
     }
 
     private static class CapturingEmailSender implements EmailSender {

@@ -26,13 +26,14 @@ public class NotificationFacade {
     }
 
     public void notify(NotificationRequestedMessage message) {
-        if (notificationLogRepository.findByRequestId(message.requestId()).isPresent()) {
+        NotificationRequest request = NotificationRequest.from(message);
+        if (notificationLogRepository.findByRequestId(request.requestId()).isPresent()) {
             return;
         }
 
-        EmailMessage emailMessage = emailMessageFactory.create(message);
+        EmailMessage emailMessage = emailMessageFactory.create(request);
         emailSender.send(emailMessage);
-        notificationLogRepository.save(NotificationLog.sent(message, emailMessage, Instant.now(clock)));
+        notificationLogRepository.save(NotificationLog.sent(request, emailMessage, Instant.now(clock)));
     }
 
     public Optional<NotificationLogDto> findByRequestId(UUID requestId) {

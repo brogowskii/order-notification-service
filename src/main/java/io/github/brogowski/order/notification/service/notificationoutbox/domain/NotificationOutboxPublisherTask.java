@@ -25,6 +25,12 @@ class NotificationOutboxPublisherTask {
             Duration retryDelay,
             Duration processingTimeout,
             int maxAttempts) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("Notification outbox batch size must be positive");
+        }
+        if (retryDelay.isZero() || retryDelay.isNegative()) {
+            throw new IllegalArgumentException("Notification outbox retry delay must be positive");
+        }
         if (maxAttempts < 1) {
             throw new IllegalArgumentException("Notification outbox max attempts must be positive");
         }

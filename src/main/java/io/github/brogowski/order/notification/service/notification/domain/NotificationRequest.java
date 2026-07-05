@@ -1,27 +1,25 @@
-package io.github.brogowski.order.notification.service.orderaudit.domain;
+package io.github.brogowski.order.notification.service.notification.domain;
 
-import io.github.brogowski.order.notification.service.messaging.OrderReceivedMessage;
-import io.github.brogowski.order.notification.service.orderaudit.dto.OrderRequestAuditDto;
+import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.util.StringUtils;
 
-record OrderRequestAudit(
+record NotificationRequest(
         UUID requestId,
         String shipmentNumber,
         String recipientEmail,
         String recipientCountryCode,
         String senderCountryCode,
         int statusCode,
-        Instant receivedAt,
-        Instant storedAt) {
+        Instant requestedAt) {
 
     private static final int SHIPMENT_NUMBER_MAX_LENGTH = 100;
     private static final int RECIPIENT_EMAIL_MAX_LENGTH = 320;
     private static final String COUNTRY_CODE_PATTERN = "^[A-Z]{2}$";
 
-    OrderRequestAudit {
+    NotificationRequest {
         requestId = Objects.requireNonNull(requestId, "Request id must not be null");
         shipmentNumber = requireText(shipmentNumber, "Shipment number");
         if (shipmentNumber.length() > SHIPMENT_NUMBER_MAX_LENGTH) {
@@ -39,32 +37,18 @@ record OrderRequestAudit(
         if (statusCode < 0 || statusCode > 100) {
             throw new IllegalArgumentException("Status code must be between 0 and 100");
         }
-        receivedAt = Objects.requireNonNull(receivedAt, "Received at must not be null");
-        storedAt = Objects.requireNonNull(storedAt, "Stored at must not be null");
+        requestedAt = Objects.requireNonNull(requestedAt, "Requested at must not be null");
     }
 
-    static OrderRequestAudit from(OrderReceivedMessage message, Instant storedAt) {
-        return new OrderRequestAudit(
+    static NotificationRequest from(NotificationRequestedMessage message) {
+        return new NotificationRequest(
                 message.requestId(),
                 message.shipmentNumber(),
                 message.recipientEmail(),
                 message.recipientCountryCode(),
                 message.senderCountryCode(),
                 message.statusCode(),
-                message.receivedAt(),
-                storedAt);
-    }
-
-    OrderRequestAuditDto toDto() {
-        return new OrderRequestAuditDto(
-                requestId,
-                shipmentNumber,
-                recipientEmail,
-                recipientCountryCode,
-                senderCountryCode,
-                statusCode,
-                receivedAt,
-                storedAt);
+                message.requestedAt());
     }
 
     private static String requireText(String value, String fieldName) {

@@ -1,6 +1,7 @@
 package io.github.brogowski.order.notification.service.notificationoutbox.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import io.github.brogowski.order.notification.service.notificationoutbox.exception.NotificationOutboxPublishingException;
@@ -178,6 +179,34 @@ class NotificationOutboxPublisherTaskTest {
         assertThat(publisher.publishedMessages).hasSize(1);
         assertThat(repository.publishedEntryId)
                 .isEqualTo(repository.entries.get(0).id());
+    }
+
+    @Test
+    void rejectsNonPositiveBatchSize() {
+        assertThatThrownBy(() -> new NotificationOutboxPublisherTask(
+                        new InMemoryNotificationOutboxRepository(List.of()),
+                        new CapturingNotificationRequestedPublisher(false),
+                        fixedClock(),
+                        0,
+                        RETRY_DELAY,
+                        PROCESSING_TIMEOUT,
+                        3))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Notification outbox batch size must be positive");
+    }
+
+    @Test
+    void rejectsNonPositiveRetryDelay() {
+        assertThatThrownBy(() -> new NotificationOutboxPublisherTask(
+                        new InMemoryNotificationOutboxRepository(List.of()),
+                        new CapturingNotificationRequestedPublisher(false),
+                        fixedClock(),
+                        10,
+                        Duration.ZERO,
+                        PROCESSING_TIMEOUT,
+                        3))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Notification outbox retry delay must be positive");
     }
 
     private static Clock fixedClock() {

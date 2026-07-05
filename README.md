@@ -11,8 +11,7 @@ stay package-private where possible. Other modules communicate through public fa
 ```mermaid
 flowchart LR
     Client["E-commerce platforms"] --> Api["Order intake API"]
-    Api --> RateLimit["Fixed window rate limiter"]
-    RateLimit --> OrdersTopic["Kafka: orders.received.v1"]
+    Api --> OrdersTopic["Kafka: orders.received.v1"]
 
     OrdersTopic --> Audit["Order audit module"]
     Audit --> AuditDb[("PostgreSQL: order_request_audit")]
@@ -28,7 +27,7 @@ flowchart LR
 
 Main modules:
 
-- `orderintake` accepts and validates HTTP requests, controls intake rate, and publishes order events.
+- `orderintake` accepts and validates HTTP requests, then publishes order events.
 - `orderaudit` consumes order events and stores immutable audit data.
 - `notificationoutbox` stores pending notification requests and publishes them in batches.
 - `notification` consumes notification requests, simulates email sending, and stores notification logs.
@@ -46,7 +45,8 @@ PENDING -> PROCESSING -> PUBLISHED
 
 Outbox entries are claimed with PostgreSQL row locking before publishing. This allows multiple
 application instances to process different outbox entries without publishing the same notification
-request twice.
+request twice. Stale `PROCESSING` entries are reclaimed after a configurable timeout, so a crashed
+instance does not leave notifications blocked forever.
 
 ## Requirements
 
@@ -123,22 +123,30 @@ Health endpoint:
 curl http://localhost:8080/actuator/health
 ```
 
-## Throughput Controls
+Kafka consumers use exponential retry and publish exhausted records to dead-letter topics:
+
+- `orders.received.v1.DLT`
+- `notifications.requested.v1.DLT`
+
+## Processing Controls
 
 The application exposes separate controls for intake and notification processing:
 
 | Area | Variable | Default |
 | --- | --- | --- |
-| Intake rate limit | `INTAKE_RATE_LIMIT_ENABLED` | `false` |
-| Intake max requests | `INTAKE_RATE_LIMIT_MAX_REQUESTS` | `100` |
-| Intake window | `INTAKE_RATE_LIMIT_WINDOW` | `1s` |
+| Kafka consumer retry initial interval | `KAFKA_CONSUMER_RETRY_INITIAL_INTERVAL` | `1s` |
+| Kafka consumer retry max interval | `KAFKA_CONSUMER_RETRY_MAX_INTERVAL` | `10s` |
+| Kafka consumer retry max elapsed time | `KAFKA_CONSUMER_RETRY_MAX_ELAPSED_TIME` | `1m` |
 | Order audit consumer concurrency | `ORDER_AUDIT_CONCURRENCY` | `1` |
 | Order audit max poll records | `ORDER_AUDIT_MAX_POLL_RECORDS` | `100` |
+| Order audit dead-letter topic | `ORDER_AUDIT_DLT_TOPIC` | `orders.received.v1.DLT` |
 | Notification consumer concurrency | `NOTIFICATION_CONCURRENCY` | `1` |
 | Notification max poll records | `NOTIFICATION_MAX_POLL_RECORDS` | `50` |
+| Notification dead-letter topic | `NOTIFICATION_DLT_TOPIC` | `notifications.requested.v1.DLT` |
 | Outbox publishing interval | `NOTIFICATION_OUTBOX_PUBLISH_INTERVAL` | `2s` |
 | Outbox batch size | `NOTIFICATION_OUTBOX_BATCH_SIZE` | `50` |
 | Outbox retry delay | `NOTIFICATION_OUTBOX_RETRY_DELAY` | `10s` |
+| Outbox processing timeout | `NOTIFICATION_OUTBOX_PROCESSING_TIMEOUT` | `1m` |
 | Outbox max attempts | `NOTIFICATION_OUTBOX_MAX_ATTEMPTS` | `3` |
 
 ## Run Tests

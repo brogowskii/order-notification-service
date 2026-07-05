@@ -1,6 +1,5 @@
 package io.github.brogowski.order.notification.service.notification.domain;
 
-import io.github.brogowski.order.notification.service.messaging.NotificationRequestedMessage;
 import io.github.brogowski.order.notification.service.notification.dto.NotificationLogDto;
 import java.time.Instant;
 import java.util.UUID;
@@ -18,18 +17,18 @@ record NotificationLog(
         Instant requestedAt,
         Instant sentAt) {
 
-    static NotificationLog sent(NotificationRequestedMessage message, EmailMessage emailMessage, Instant sentAt) {
+    static NotificationLog sent(NotificationRequest request, EmailMessage emailMessage, Instant sentAt) {
         return new NotificationLog(
-                message.requestId(),
-                message.shipmentNumber(),
-                message.recipientEmail(),
-                message.recipientCountryCode(),
-                message.senderCountryCode(),
-                message.statusCode(),
+                request.requestId(),
+                request.shipmentNumber(),
+                request.recipientEmail(),
+                request.recipientCountryCode(),
+                request.senderCountryCode(),
+                request.statusCode(),
                 emailMessage.subject(),
                 emailMessage.body(),
                 NotificationStatus.SENT,
-                message.requestedAt(),
+                request.requestedAt(),
                 sentAt);
     }
 
