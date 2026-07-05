@@ -10,19 +10,42 @@ stay package-private where possible. Other modules communicate through public fa
 
 ```mermaid
 flowchart LR
-    Client["E-commerce platforms"] --> Api["Order intake API"]
-    Api --> OrdersTopic["Kafka: orders.received.v1"]
+    Client["External clients"] --> IntakeApi["POST /api/v1/orders"]
 
-    OrdersTopic --> Audit["Order audit module"]
-    Audit --> AuditDb[("PostgreSQL: order_request_audit")]
-    Audit --> Outbox[("PostgreSQL: notification_outbox")]
+    subgraph App["Order Notification Service"]
+        Intake["orderintake<br/>validate and accept"]
+        Audit["orderaudit<br/>store request audit"]
+        OutboxPublisher["notificationoutbox<br/>publish pending notifications"]
+        Notification["notification<br/>send mocked email"]
+    end
 
-    Outbox --> OutboxTask["Notification outbox publisher"]
-    OutboxTask --> NotificationsTopic["Kafka: notifications.requested.v1"]
+    subgraph Kafka["Kafka"]
+        OrdersTopic[("orders.received.v1")]
+        OrdersDlt[("orders.received.v1.DLT")]
+        NotificationsTopic[("notifications.requested.v1")]
+        NotificationsDlt[("notifications.requested.v1.DLT")]
+    end
 
-    NotificationsTopic --> Notification["Notification module"]
+    subgraph Postgres["PostgreSQL"]
+        AuditDb[("order_request_audit")]
+        OutboxDb[("notification_outbox")]
+        NotificationDb[("notification_log")]
+    end
+
+    IntakeApi --> Intake
+    Intake --> OrdersTopic
+    OrdersTopic --> Audit
+    OrdersTopic -. exhausted retries .-> OrdersDlt
+
+    Audit --> AuditDb
+    Audit --> OutboxDb
+    OutboxDb --> OutboxPublisher
+    OutboxPublisher --> NotificationsTopic
+
+    NotificationsTopic --> Notification
+    NotificationsTopic -. exhausted retries .-> NotificationsDlt
     Notification --> MockEmail["Mock email sender"]
-    Notification --> NotificationDb[("PostgreSQL: notification_log")]
+    Notification --> NotificationDb
 ```
 
 Main modules:
