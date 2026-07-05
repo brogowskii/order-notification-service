@@ -1,13 +1,14 @@
-package io.github.brogowski.order.notification.service.messaging;
+package io.github.brogowski.order.notification.service.orderaudit.dto;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record OrderReceivedMessage(
+public record OrderRequestAuditDto(
         UUID requestId,
         String shipmentNumber,
         String recipientEmail,
         String recipientCountryCode,
         String senderCountryCode,
         int statusCode,
-        Instant receivedAt) {}
+        Instant receivedAt,
+        Instant storedAt) {}

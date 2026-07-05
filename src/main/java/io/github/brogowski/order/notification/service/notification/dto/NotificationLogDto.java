@@ -1,13 +1,17 @@
-package io.github.brogowski.order.notification.service.messaging;
+package io.github.brogowski.order.notification.service.notification.dto;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record OrderReceivedMessage(
+public record NotificationLogDto(
         UUID requestId,
         String shipmentNumber,
         String recipientEmail,
         String recipientCountryCode,
         String senderCountryCode,
         int statusCode,
-        Instant receivedAt) {}
+        String subject,
+        String body,
+        String status,
+        Instant requestedAt,
+        Instant sentAt) {}
