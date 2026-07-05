@@ -5,7 +5,7 @@ import java.util.UUID;
 
 interface OrderRequestAuditRepository {
 
-  void save(OrderRequestAudit audit);
+    void save(OrderRequestAudit audit);
 
-  Optional<OrderRequestAudit> findByRequestId(UUID requestId);
+    Optional<OrderRequestAudit> findByRequestId(UUID requestId);
 }

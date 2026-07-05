@@ -6,11 +6,11 @@ import java.util.UUID;
 
 interface NotificationOutboxRepository {
 
-  void save(NotificationOutboxEntry entry);
+    void save(NotificationOutboxEntry entry);
 
-  List<NotificationOutboxEntry> claimPending(Instant now, int limit);
+    List<NotificationOutboxEntry> claimPending(Instant now, int limit);
 
-  void markPublished(UUID id, Instant publishedAt);
+    void markPublished(UUID id, Instant publishedAt);
 
-  void markFailed(UUID id, Instant nextAttemptAt, int maxAttempts);
+    void markFailed(UUID id, Instant nextAttemptAt, int maxAttempts);
 }

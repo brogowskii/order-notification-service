@@ -10,17 +10,16 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 
 class JdbcOrderRequestAuditRepository implements OrderRequestAuditRepository {
 
-  private final JdbcClient jdbcClient;
+    private final JdbcClient jdbcClient;
 
-  JdbcOrderRequestAuditRepository(JdbcClient jdbcClient) {
-    this.jdbcClient = jdbcClient;
-  }
+    JdbcOrderRequestAuditRepository(JdbcClient jdbcClient) {
+        this.jdbcClient = jdbcClient;
+    }
 
-  @Override
-  public void save(OrderRequestAudit audit) {
-    jdbcClient
-        .sql(
-            """
+    @Override
+    public void save(OrderRequestAudit audit) {
+        jdbcClient
+                .sql("""
             INSERT INTO order_request_audit (
                 request_id,
                 shipment_number,
@@ -42,22 +41,21 @@ class JdbcOrderRequestAuditRepository implements OrderRequestAuditRepository {
             )
             ON CONFLICT (request_id) DO NOTHING
             """)
-        .param("requestId", audit.requestId())
-        .param("shipmentNumber", audit.shipmentNumber())
-        .param("recipientEmail", audit.recipientEmail())
-        .param("recipientCountryCode", audit.recipientCountryCode())
-        .param("senderCountryCode", audit.senderCountryCode())
-        .param("statusCode", audit.statusCode())
-        .param("receivedAt", timestamp(audit.receivedAt()))
-        .param("storedAt", timestamp(audit.storedAt()))
-        .update();
-  }
+                .param("requestId", audit.requestId())
+                .param("shipmentNumber", audit.shipmentNumber())
+                .param("recipientEmail", audit.recipientEmail())
+                .param("recipientCountryCode", audit.recipientCountryCode())
+                .param("senderCountryCode", audit.senderCountryCode())
+                .param("statusCode", audit.statusCode())
+                .param("receivedAt", timestamp(audit.receivedAt()))
+                .param("storedAt", timestamp(audit.storedAt()))
+                .update();
+    }
 
-  @Override
-  public Optional<OrderRequestAudit> findByRequestId(UUID requestId) {
-    return jdbcClient
-        .sql(
-            """
+    @Override
+    public Optional<OrderRequestAudit> findByRequestId(UUID requestId) {
+        return jdbcClient
+                .sql("""
             SELECT
                 request_id,
                 shipment_number,
@@ -70,24 +68,24 @@ class JdbcOrderRequestAuditRepository implements OrderRequestAuditRepository {
             FROM order_request_audit
             WHERE request_id = :requestId
             """)
-        .param("requestId", requestId)
-        .query(this::mapRow)
-        .optional();
-  }
+                .param("requestId", requestId)
+                .query(this::mapRow)
+                .optional();
+    }
 
-  private OrderRequestAudit mapRow(ResultSet resultSet, int rowNumber) throws SQLException {
-    return new OrderRequestAudit(
-        resultSet.getObject("request_id", UUID.class),
-        resultSet.getString("shipment_number"),
-        resultSet.getString("recipient_email"),
-        resultSet.getString("recipient_country_code"),
-        resultSet.getString("sender_country_code"),
-        resultSet.getInt("status_code"),
-        resultSet.getTimestamp("received_at").toInstant(),
-        resultSet.getTimestamp("stored_at").toInstant());
-  }
+    private OrderRequestAudit mapRow(ResultSet resultSet, int rowNumber) throws SQLException {
+        return new OrderRequestAudit(
+                resultSet.getObject("request_id", UUID.class),
+                resultSet.getString("shipment_number"),
+                resultSet.getString("recipient_email"),
+                resultSet.getString("recipient_country_code"),
+                resultSet.getString("sender_country_code"),
+                resultSet.getInt("status_code"),
+                resultSet.getTimestamp("received_at").toInstant(),
+                resultSet.getTimestamp("stored_at").toInstant());
+    }
 
-  private static Timestamp timestamp(Instant instant) {
-    return Timestamp.from(instant);
-  }
+    private static Timestamp timestamp(Instant instant) {
+        return Timestamp.from(instant);
+    }
 }

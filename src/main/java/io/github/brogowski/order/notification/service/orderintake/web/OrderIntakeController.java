@@ -15,15 +15,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/orders")
 class OrderIntakeController {
 
-  private final OrderIntakeFacade orderIntakeFacade;
+    private final OrderIntakeFacade orderIntakeFacade;
 
-  OrderIntakeController(OrderIntakeFacade orderIntakeFacade) {
-    this.orderIntakeFacade = orderIntakeFacade;
-  }
+    OrderIntakeController(OrderIntakeFacade orderIntakeFacade) {
+        this.orderIntakeFacade = orderIntakeFacade;
+    }
 
-  @PostMapping
-  @ResponseStatus(HttpStatus.ACCEPTED)
-  OrderAcceptedDto accept(@Valid @RequestBody OrderRequestDto request) {
-    return orderIntakeFacade.accept(request);
-  }
+    @PostMapping
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    OrderAcceptedDto accept(@Valid @RequestBody OrderRequestDto request) {
+        return orderIntakeFacade.accept(request);
+    }
 }

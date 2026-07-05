@@ -13,23 +13,22 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(assignableTypes = OrderIntakeController.class)
 class OrderIntakeExceptionHandler {
 
-  private final Clock clock;
+    private final Clock clock;
 
-  OrderIntakeExceptionHandler(Clock clock) {
-    this.clock = clock;
-  }
+    OrderIntakeExceptionHandler(Clock clock) {
+        this.clock = clock;
+    }
 
-  @ExceptionHandler(OrderIntakeUnavailableException.class)
-  ResponseEntity<ApiErrorDto> handleUnavailable(
-      OrderIntakeUnavailableException exception, HttpServletRequest request) {
-    HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;
-    return ResponseEntity.status(status)
-        .body(
-            new ApiErrorDto(
-                Instant.now(clock),
-                status.value(),
-                status.getReasonPhrase(),
-                exception.getMessage(),
-                request.getRequestURI()));
-  }
+    @ExceptionHandler(OrderIntakeUnavailableException.class)
+    ResponseEntity<ApiErrorDto> handleUnavailable(
+            OrderIntakeUnavailableException exception, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;
+        return ResponseEntity.status(status)
+                .body(new ApiErrorDto(
+                        Instant.now(clock),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        exception.getMessage(),
+                        request.getRequestURI()));
+    }
 }

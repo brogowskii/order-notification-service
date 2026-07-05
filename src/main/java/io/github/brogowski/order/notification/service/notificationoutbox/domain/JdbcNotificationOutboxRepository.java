@@ -10,17 +10,16 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 
 class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
 
-  private final JdbcClient jdbcClient;
+    private final JdbcClient jdbcClient;
 
-  JdbcNotificationOutboxRepository(JdbcClient jdbcClient) {
-    this.jdbcClient = jdbcClient;
-  }
+    JdbcNotificationOutboxRepository(JdbcClient jdbcClient) {
+        this.jdbcClient = jdbcClient;
+    }
 
-  @Override
-  public void save(NotificationOutboxEntry entry) {
-    jdbcClient
-        .sql(
-            """
+    @Override
+    public void save(NotificationOutboxEntry entry) {
+        jdbcClient
+                .sql("""
             INSERT INTO notification_outbox (
                 id,
                 request_id,
@@ -52,27 +51,26 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
             )
             ON CONFLICT (request_id) DO NOTHING
             """)
-        .param("id", entry.id())
-        .param("requestId", entry.requestId())
-        .param("shipmentNumber", entry.shipmentNumber())
-        .param("recipientEmail", entry.recipientEmail())
-        .param("recipientCountryCode", entry.recipientCountryCode())
-        .param("senderCountryCode", entry.senderCountryCode())
-        .param("statusCode", entry.statusCode())
-        .param("requestedAt", timestamp(entry.requestedAt()))
-        .param("status", entry.status().name())
-        .param("attempts", entry.attempts())
-        .param("createdAt", timestamp(entry.createdAt()))
-        .param("nextAttemptAt", timestamp(entry.nextAttemptAt()))
-        .param("publishedAt", timestampOrNull(entry.publishedAt()))
-        .update();
-  }
+                .param("id", entry.id())
+                .param("requestId", entry.requestId())
+                .param("shipmentNumber", entry.shipmentNumber())
+                .param("recipientEmail", entry.recipientEmail())
+                .param("recipientCountryCode", entry.recipientCountryCode())
+                .param("senderCountryCode", entry.senderCountryCode())
+                .param("statusCode", entry.statusCode())
+                .param("requestedAt", timestamp(entry.requestedAt()))
+                .param("status", entry.status().name())
+                .param("attempts", entry.attempts())
+                .param("createdAt", timestamp(entry.createdAt()))
+                .param("nextAttemptAt", timestamp(entry.nextAttemptAt()))
+                .param("publishedAt", timestampOrNull(entry.publishedAt()))
+                .update();
+    }
 
-  @Override
-  public List<NotificationOutboxEntry> claimPending(Instant now, int limit) {
-    return jdbcClient
-        .sql(
-            """
+    @Override
+    public List<NotificationOutboxEntry> claimPending(Instant now, int limit) {
+        return jdbcClient
+                .sql("""
             WITH claimed AS (
                 SELECT id
                 FROM notification_outbox
@@ -101,37 +99,35 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
                 notification_outbox.next_attempt_at,
                 notification_outbox.published_at
             """)
-        .param("pendingStatus", OutboxStatus.PENDING.name())
-        .param("processingStatus", OutboxStatus.PROCESSING.name())
-        .param("now", timestamp(now))
-        .param("limit", limit)
-        .query(this::mapRow)
-        .list();
-  }
+                .param("pendingStatus", OutboxStatus.PENDING.name())
+                .param("processingStatus", OutboxStatus.PROCESSING.name())
+                .param("now", timestamp(now))
+                .param("limit", limit)
+                .query(this::mapRow)
+                .list();
+    }
 
-  @Override
-  public void markPublished(UUID id, Instant publishedAt) {
-    jdbcClient
-        .sql(
-            """
+    @Override
+    public void markPublished(UUID id, Instant publishedAt) {
+        jdbcClient
+                .sql("""
             UPDATE notification_outbox
             SET status = :status,
                 published_at = :publishedAt
             WHERE id = :id
               AND status = :processingStatus
             """)
-        .param("status", OutboxStatus.PUBLISHED.name())
-        .param("processingStatus", OutboxStatus.PROCESSING.name())
-        .param("id", id)
-        .param("publishedAt", timestamp(publishedAt))
-        .update();
-  }
+                .param("status", OutboxStatus.PUBLISHED.name())
+                .param("processingStatus", OutboxStatus.PROCESSING.name())
+                .param("id", id)
+                .param("publishedAt", timestamp(publishedAt))
+                .update();
+    }
 
-  @Override
-  public void markFailed(UUID id, Instant nextAttemptAt, int maxAttempts) {
-    jdbcClient
-        .sql(
-            """
+    @Override
+    public void markFailed(UUID id, Instant nextAttemptAt, int maxAttempts) {
+        jdbcClient
+                .sql("""
             UPDATE notification_outbox
             SET attempts = attempts + 1,
                 status = CASE
@@ -142,41 +138,41 @@ class JdbcNotificationOutboxRepository implements NotificationOutboxRepository {
             WHERE id = :id
               AND status = :processingStatus
             """)
-        .param("id", id)
-        .param("nextAttemptAt", timestamp(nextAttemptAt))
-        .param("maxAttempts", maxAttempts)
-        .param("failedStatus", OutboxStatus.FAILED.name())
-        .param("pendingStatus", OutboxStatus.PENDING.name())
-        .param("processingStatus", OutboxStatus.PROCESSING.name())
-        .update();
-  }
+                .param("id", id)
+                .param("nextAttemptAt", timestamp(nextAttemptAt))
+                .param("maxAttempts", maxAttempts)
+                .param("failedStatus", OutboxStatus.FAILED.name())
+                .param("pendingStatus", OutboxStatus.PENDING.name())
+                .param("processingStatus", OutboxStatus.PROCESSING.name())
+                .update();
+    }
 
-  private NotificationOutboxEntry mapRow(ResultSet resultSet, int rowNumber) throws SQLException {
-    return new NotificationOutboxEntry(
-        resultSet.getObject("id", UUID.class),
-        resultSet.getObject("request_id", UUID.class),
-        resultSet.getString("shipment_number"),
-        resultSet.getString("recipient_email"),
-        resultSet.getString("recipient_country_code"),
-        resultSet.getString("sender_country_code"),
-        resultSet.getInt("status_code"),
-        resultSet.getTimestamp("requested_at").toInstant(),
-        OutboxStatus.valueOf(resultSet.getString("status")),
-        resultSet.getInt("attempts"),
-        resultSet.getTimestamp("created_at").toInstant(),
-        resultSet.getTimestamp("next_attempt_at").toInstant(),
-        timestampToInstant(resultSet.getTimestamp("published_at")));
-  }
+    private NotificationOutboxEntry mapRow(ResultSet resultSet, int rowNumber) throws SQLException {
+        return new NotificationOutboxEntry(
+                resultSet.getObject("id", UUID.class),
+                resultSet.getObject("request_id", UUID.class),
+                resultSet.getString("shipment_number"),
+                resultSet.getString("recipient_email"),
+                resultSet.getString("recipient_country_code"),
+                resultSet.getString("sender_country_code"),
+                resultSet.getInt("status_code"),
+                resultSet.getTimestamp("requested_at").toInstant(),
+                OutboxStatus.valueOf(resultSet.getString("status")),
+                resultSet.getInt("attempts"),
+                resultSet.getTimestamp("created_at").toInstant(),
+                resultSet.getTimestamp("next_attempt_at").toInstant(),
+                timestampToInstant(resultSet.getTimestamp("published_at")));
+    }
 
-  private static Timestamp timestamp(Instant instant) {
-    return Timestamp.from(instant);
-  }
+    private static Timestamp timestamp(Instant instant) {
+        return Timestamp.from(instant);
+    }
 
-  private static Timestamp timestampOrNull(Instant instant) {
-    return instant == null ? null : Timestamp.from(instant);
-  }
+    private static Timestamp timestampOrNull(Instant instant) {
+        return instant == null ? null : Timestamp.from(instant);
+    }
 
-  private static Instant timestampToInstant(Timestamp timestamp) {
-    return timestamp == null ? null : timestamp.toInstant();
-  }
+    private static Instant timestampToInstant(Timestamp timestamp) {
+        return timestamp == null ? null : timestamp.toInstant();
+    }
 }

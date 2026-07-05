@@ -10,32 +10,31 @@ import org.springframework.kafka.core.KafkaTemplate;
 
 class KafkaNotificationRequestedPublisher implements NotificationRequestedPublisher {
 
-  private final KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate;
-  private final String topicName;
-  private final Duration publishTimeout;
+    private final KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate;
+    private final String topicName;
+    private final Duration publishTimeout;
 
-  KafkaNotificationRequestedPublisher(
-      KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate,
-      String topicName,
-      Duration publishTimeout) {
-    this.kafkaTemplate = kafkaTemplate;
-    this.topicName = topicName;
-    this.publishTimeout = publishTimeout;
-  }
-
-  @Override
-  public void publish(NotificationRequestedMessage message) {
-    try {
-      kafkaTemplate
-          .send(topicName, message.requestId().toString(), message)
-          .get(publishTimeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException exception) {
-      Thread.currentThread().interrupt();
-      throw new NotificationOutboxPublishingException(
-          "Publishing notification request was interrupted", exception);
-    } catch (ExecutionException | TimeoutException exception) {
-      throw new NotificationOutboxPublishingException(
-          "Could not publish notification request", exception);
+    KafkaNotificationRequestedPublisher(
+            KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate,
+            String topicName,
+            Duration publishTimeout) {
+        this.kafkaTemplate = kafkaTemplate;
+        this.topicName = topicName;
+        this.publishTimeout = publishTimeout;
     }
-  }
+
+    @Override
+    public void publish(NotificationRequestedMessage message) {
+        try {
+            kafkaTemplate
+                    .send(topicName, message.requestId().toString(), message)
+                    .get(publishTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new NotificationOutboxPublishingException(
+                    "Publishing notification request was interrupted", exception);
+        } catch (ExecutionException | TimeoutException exception) {
+            throw new NotificationOutboxPublishingException("Could not publish notification request", exception);
+        }
+    }
 }

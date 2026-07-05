@@ -5,7 +5,7 @@ import java.util.UUID;
 
 interface NotificationLogRepository {
 
-  void save(NotificationLog log);
+    void save(NotificationLog log);
 
-  Optional<NotificationLog> findByRequestId(UUID requestId);
+    Optional<NotificationLog> findByRequestId(UUID requestId);
 }

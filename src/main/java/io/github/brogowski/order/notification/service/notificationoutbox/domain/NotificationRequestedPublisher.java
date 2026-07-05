@@ -4,5 +4,5 @@ import io.github.brogowski.order.notification.service.messaging.NotificationRequ
 
 interface NotificationRequestedPublisher {
 
-  void publish(NotificationRequestedMessage message);
+    void publish(NotificationRequestedMessage message);
 }

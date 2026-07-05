@@ -4,5 +4,5 @@ import io.github.brogowski.order.notification.service.messaging.OrderReceivedMes
 
 interface OrderReceivedPublisher {
 
-  void publish(OrderReceivedMessage message);
+    void publish(OrderReceivedMessage message);
 }

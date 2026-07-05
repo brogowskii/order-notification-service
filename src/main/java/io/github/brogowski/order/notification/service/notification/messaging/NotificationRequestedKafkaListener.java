@@ -8,17 +8,17 @@ import org.springframework.stereotype.Component;
 @Component
 class NotificationRequestedKafkaListener {
 
-  private final NotificationFacade notificationFacade;
+    private final NotificationFacade notificationFacade;
 
-  NotificationRequestedKafkaListener(NotificationFacade notificationFacade) {
-    this.notificationFacade = notificationFacade;
-  }
+    NotificationRequestedKafkaListener(NotificationFacade notificationFacade) {
+        this.notificationFacade = notificationFacade;
+    }
 
-  @KafkaListener(
-      topics = "${app.kafka.topics.notifications-requested}",
-      groupId = "${app.kafka.consumers.notification.group-id}",
-      containerFactory = "notificationRequestedKafkaListenerContainerFactory")
-  void onNotificationRequested(NotificationRequestedMessage message) {
-    notificationFacade.notify(message);
-  }
+    @KafkaListener(
+            topics = "${app.kafka.topics.notifications-requested}",
+            groupId = "${app.kafka.consumers.notification.group-id}",
+            containerFactory = "notificationRequestedKafkaListenerContainerFactory")
+    void onNotificationRequested(NotificationRequestedMessage message) {
+        notificationFacade.notify(message);
+    }
 }

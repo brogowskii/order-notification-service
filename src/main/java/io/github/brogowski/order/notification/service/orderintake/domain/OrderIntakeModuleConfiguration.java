@@ -10,14 +10,13 @@ import org.springframework.kafka.core.KafkaTemplate;
 @Configuration
 class OrderIntakeModuleConfiguration {
 
-  @Bean
-  OrderIntakeFacade orderIntakeFacade(
-      KafkaTemplate<String, OrderReceivedMessage> kafkaTemplate,
-      Clock clock,
-      @Value("${app.kafka.topics.orders-received}") String topicName) {
-    final KafkaOrderReceivedPublisher orderReceivedPublisher = new KafkaOrderReceivedPublisher(
-        kafkaTemplate, topicName);
-
-    return new OrderIntakeFacade(orderReceivedPublisher, clock);
-  }
+    @Bean
+    OrderIntakeFacade orderIntakeFacade(
+            KafkaTemplate<String, OrderReceivedMessage> kafkaTemplate,
+            Clock clock,
+            @Value("${app.kafka.topics.orders-received}") String topicName) {
+        final KafkaOrderReceivedPublisher orderReceivedPublisher =
+                new KafkaOrderReceivedPublisher(kafkaTemplate, topicName);
+        return new OrderIntakeFacade(orderReceivedPublisher, clock);
+    }
 }

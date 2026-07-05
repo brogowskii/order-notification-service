@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/order-requests")
 class OrderAuditController {
 
-  private final OrderAuditFacade orderAuditFacade;
+    private final OrderAuditFacade orderAuditFacade;
 
-  OrderAuditController(OrderAuditFacade orderAuditFacade) {
-    this.orderAuditFacade = orderAuditFacade;
-  }
+    OrderAuditController(OrderAuditFacade orderAuditFacade) {
+        this.orderAuditFacade = orderAuditFacade;
+    }
 
-  @GetMapping("/{requestId}")
-  OrderRequestAuditDto findByRequestId(@PathVariable UUID requestId) {
-    return orderAuditFacade
-        .findByRequestId(requestId)
-        .orElseThrow(() -> new OrderRequestAuditNotFoundException(requestId));
-  }
+    @GetMapping("/{requestId}")
+    OrderRequestAuditDto findByRequestId(@PathVariable UUID requestId) {
+        return orderAuditFacade
+                .findByRequestId(requestId)
+                .orElseThrow(() -> new OrderRequestAuditNotFoundException(requestId));
+    }
 }

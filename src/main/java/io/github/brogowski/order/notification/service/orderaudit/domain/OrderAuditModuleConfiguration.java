@@ -9,12 +9,11 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 @Configuration
 class OrderAuditModuleConfiguration {
 
-  @Bean
-  OrderAuditFacade orderAuditFacade(
-      JdbcClient jdbcClient, NotificationOutboxFacade notificationOutboxFacade, Clock clock) {
-    return new OrderAuditFacade(
-        new JdbcOrderRequestAuditRepository(jdbcClient),
-        notificationOutboxFacade,
-        clock);
-  }
+    @Bean
+    OrderAuditFacade orderAuditFacade(
+            JdbcClient jdbcClient, NotificationOutboxFacade notificationOutboxFacade, Clock clock) {
+        final JdbcOrderRequestAuditRepository orderRequestAuditRepository =
+                new JdbcOrderRequestAuditRepository(jdbcClient);
+        return new OrderAuditFacade(orderRequestAuditRepository, notificationOutboxFacade, clock);
+    }
 }

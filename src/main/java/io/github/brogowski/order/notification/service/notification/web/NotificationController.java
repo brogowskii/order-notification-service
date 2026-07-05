@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/notifications")
 class NotificationController {
 
-  private final NotificationFacade notificationFacade;
+    private final NotificationFacade notificationFacade;
 
-  NotificationController(NotificationFacade notificationFacade) {
-    this.notificationFacade = notificationFacade;
-  }
+    NotificationController(NotificationFacade notificationFacade) {
+        this.notificationFacade = notificationFacade;
+    }
 
-  @GetMapping("/{requestId}")
-  NotificationLogDto findByRequestId(@PathVariable UUID requestId) {
-    return notificationFacade
-        .findByRequestId(requestId)
-        .orElseThrow(() -> new NotificationLogNotFoundException(requestId));
-  }
+    @GetMapping("/{requestId}")
+    NotificationLogDto findByRequestId(@PathVariable UUID requestId) {
+        return notificationFacade
+                .findByRequestId(requestId)
+                .orElseThrow(() -> new NotificationLogNotFoundException(requestId));
+    }
 }

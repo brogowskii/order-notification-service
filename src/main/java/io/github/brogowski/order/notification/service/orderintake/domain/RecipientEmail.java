@@ -4,10 +4,10 @@ import org.springframework.util.StringUtils;
 
 record RecipientEmail(String value) {
 
-  RecipientEmail {
-    if (!StringUtils.hasText(value) || !value.contains("@")) {
-      throw new IllegalArgumentException("Recipient email must be valid");
+    RecipientEmail {
+        if (!StringUtils.hasText(value) || !value.contains("@")) {
+            throw new IllegalArgumentException("Recipient email must be valid");
+        }
+        value = value.trim();
     }
-    value = value.trim();
-  }
 }

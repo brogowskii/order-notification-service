@@ -13,31 +13,32 @@ import org.springframework.kafka.core.KafkaTemplate;
 @Configuration
 class NotificationOutboxModuleConfiguration {
 
-  @Bean
-  NotificationOutboxFacade notificationOutboxFacade(JdbcClient jdbcClient) {
-    return new NotificationOutboxFacade(new JdbcNotificationOutboxRepository(jdbcClient));
-  }
+    @Bean
+    NotificationOutboxFacade notificationOutboxFacade(JdbcClient jdbcClient) {
+        return new NotificationOutboxFacade(new JdbcNotificationOutboxRepository(jdbcClient));
+    }
 
-  @Bean
-  @ConditionalOnProperty(
-      name = "app.notification-outbox.enabled",
-      havingValue = "true",
-      matchIfMissing = true)
-  NotificationOutboxPublisherTask notificationOutboxPublisherTask(
-      JdbcClient jdbcClient,
-      KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate,
-      Clock clock,
-      @Value("${app.kafka.topics.notifications-requested}") String topicName,
-      @Value("${app.kafka.publish-timeout}") Duration publishTimeout,
-      @Value("${app.notification-outbox.batch-size}") int batchSize,
-      @Value("${app.notification-outbox.retry-delay}") Duration retryDelay,
-      @Value("${app.notification-outbox.max-attempts}") int maxAttempts) {
-    return new NotificationOutboxPublisherTask(
-        new JdbcNotificationOutboxRepository(jdbcClient),
-        new KafkaNotificationRequestedPublisher(kafkaTemplate, topicName, publishTimeout),
-        clock,
-        batchSize,
-        retryDelay,
-        maxAttempts);
-  }
+    @Bean
+    @ConditionalOnProperty(name = "app.notification-outbox.enabled", havingValue = "true", matchIfMissing = true)
+    NotificationOutboxPublisherTask notificationOutboxPublisherTask(
+            JdbcClient jdbcClient,
+            KafkaTemplate<String, NotificationRequestedMessage> kafkaTemplate,
+            Clock clock,
+            @Value("${app.kafka.topics.notifications-requested}") String topicName,
+            @Value("${app.kafka.publish-timeout}") Duration publishTimeout,
+            @Value("${app.notification-outbox.batch-size}") int batchSize,
+            @Value("${app.notification-outbox.retry-delay}") Duration retryDelay,
+            @Value("${app.notification-outbox.max-attempts}") int maxAttempts) {
+        final JdbcNotificationOutboxRepository notificationOutboxRepository =
+                new JdbcNotificationOutboxRepository(jdbcClient);
+        final KafkaNotificationRequestedPublisher notificationRequestedPublisher =
+                new KafkaNotificationRequestedPublisher(kafkaTemplate, topicName, publishTimeout);
+        return new NotificationOutboxPublisherTask(
+                notificationOutboxRepository,
+                notificationRequestedPublisher,
+                clock,
+                batchSize,
+                retryDelay,
+                maxAttempts);
+    }
 }

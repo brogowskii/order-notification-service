@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class OrderNotificationServiceApplication {
 
-  public static void main(String[] args) {
-    SpringApplication.run(OrderNotificationServiceApplication.class, args);
-  }
+    public static void main(String[] args) {
+        SpringApplication.run(OrderNotificationServiceApplication.class, args);
+    }
 }

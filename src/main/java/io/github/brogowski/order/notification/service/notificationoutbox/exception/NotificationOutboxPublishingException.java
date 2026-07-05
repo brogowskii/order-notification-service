@@ -2,7 +2,7 @@ package io.github.brogowski.order.notification.service.notificationoutbox.except
 
 public class NotificationOutboxPublishingException extends RuntimeException {
 
-  public NotificationOutboxPublishingException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    public NotificationOutboxPublishingException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
